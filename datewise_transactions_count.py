@@ -42,7 +42,7 @@ for line in f:
 f.close()
 
 outputfile.write("DATE #TRANSACTIONS \n")
-for k,v in transactions_date_wise.items():
+for k,v in sorted(transactions_date_wise.items()):
     outputfile.write(str(k) + " " + str(v) + "\n")
 
 outputfile.write("TOTAL NUMBER OF TRANSACTIONS ARE :" + str(transactions))
