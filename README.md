@@ -1,6 +1,6 @@
 #========================================#
 #                  Venmo                 #
 #========================================#
-******Scripts for the Venmo project*******
+Scripts for the Venmo project.
 
 
