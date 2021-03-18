@@ -44,6 +44,18 @@ Remove blancs on words
 def remove_blanc(tokens):
     return [token.strip() for token in tokens]
 
+"""
+Preprocessing Work 
+"""
+def preprocessing(note):
+    tokens = nltk.word_tokenize(note)
+    tokens = convert_letters(tokens)
+    tokens = reduce_lengthening(tokens)
+    tokens = remove_special(tokens)
+    tokens = remove_blanc(tokens)
+    tokens = [t for t in tokens if len(t) != 0]
+    return tokens
+
 
 if(len(sys.argv) != 3):
     print("==========================================================================")
@@ -69,11 +81,8 @@ for line in f:
             continue
         note = str(data['message'])
         tokens = nltk.word_tokenize(note)
-        tokens = convert_letters(tokens)
-        tokens = reduce_lengthening(tokens)
-        tokens = remove_special(tokens)
-        tokens = remove_blanc(tokens)
-        tokens = [t for t in tokens if len(t) != 0]
+        tokens = preprocessing(note)
+
         if len(tokens) > 30:
             continue
         note = ' '.join(tokens).strip()
