@@ -15,6 +15,7 @@ transactions = 0
 textual_transactions = 0
 transactions_date_wise = {}
 pattern = re.compile("[A-Za-z0-9]+")
+phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
 
 """
 Convert all letters to lower or upper case (common : lower case)
@@ -43,6 +44,14 @@ Remove blancs on words
 """
 def remove_blanc(tokens):
     return [token.strip() for token in tokens]
+
+"""
+Phone number regex
+"""
+def contains_phn(note):
+    if(phno.search(note)):
+        return True
+    return False
 
 """
 Preprocessing Work 
