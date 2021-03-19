@@ -11,7 +11,11 @@ import json
 import nltk
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 from nltk import tokenize
+from transformers import TFBertModel
+from transformers import BertTokenizer
+from tensorflow.keras.layers import Dense, Flatten
 
 transactions = 0
 textual_transactions = 0
@@ -20,6 +24,7 @@ pattern = re.compile("[A-Za-z0-9]+")
 phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
 email = re.compile("[^@]+@[^@]+\.[^@]+")
 
+#===============================================================#
 """
 Convert all letters to lower or upper case (common : lower case)
 """
@@ -28,26 +33,26 @@ def convert_letters(tokens, style = "lower"):
         return [token.lower() for token in tokens]
     else:
         return [token.upper() for token in tokens]
-
+#===============================================================#
 """
 Eliminate all continuous duplicate characters more than twice
 """
 def reduce_lengthening(tokens):
     pattern = re.compile(r"(.)\1{2,}")
     return [pattern.sub(r"\1\1", token) for token in tokens]
-
+#===============================================================#
 """
 Remove all digits and special characters
 """
 def remove_special(tokens):
   return [re.sub("(\\d|\\W)+", " ", token) for token in tokens]
-
+#===============================================================#
 """
 Remove blancs on words
 """
 def remove_blanc(tokens):
     return [token.strip() for token in tokens]
-
+#===============================================================#
 """
 Phone number regex
 """
@@ -55,7 +60,7 @@ def contains_phn(note):
     if(phno.search(note)):
         return True
     return False
-
+#===============================================================#
 """
 Email address regex
 """
@@ -63,8 +68,7 @@ def contains_email(note):
     if(email.search(note)):
         return True
     return False
-
-
+#===============================================================#
 """
 Preprocessing Work 
 """
@@ -76,7 +80,7 @@ def preprocessing(note):
     tokens = remove_blanc(tokens)
     tokens = [t for t in tokens if len(t) != 0]
     return tokens
-
+#===============================================================#
 
 if(len(sys.argv) != 3):
     print("==========================================================================")
