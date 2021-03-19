@@ -9,6 +9,8 @@ import re
 import sys
 import json
 import nltk
+import numpy as np
+import pandas as pd
 from nltk import tokenize
 
 transactions = 0
