@@ -152,6 +152,18 @@ def encoder(notes, tokenizer):
         masks.append(encoded_dict['attention_mask'])
     return token_ids, masks
 #===============================================================#
+"""
+Update stats
+"""
+def update(row):
+    date = str(row['Date'])
+    if date not in date_category_stat:
+        date_category_stat[date] = {col:0 for col in label_cols}
+    for col in label_cols:
+        if row[col] == 0:
+            continue
+        date_category_stat[date][col] = date_category_stat[date][col] + 1
+#===============================================================#
 
 
 if(len(sys.argv) != 3):
