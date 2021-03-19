@@ -134,7 +134,24 @@ def create_dataset(data_tuple, epochs=1, batch_size=32):
     dataset = dataset.batch(batch_size)
     return dataset
 #===============================================================#
-
+"""
+BERT encoder
+"""
+def encoder(notes, tokenizer):
+    token_ids = []
+    masks = []
+    for msg in notes:
+        encoded_dict = tokenizer.encode_plus(
+                            msg,    # note to encode.
+                            add_special_tokens=True,    # Add '[CLS]' and '[SEP]'.
+                            max_length=12,  # Pad & truncate all sentences.
+                            padding='max_length',
+                            return_attention_mask=True  # Construct attn. mask.
+                        )
+        token_ids.append(encoded_dict['input_ids'])
+        masks.append(encoded_dict['attention_mask'])
+    return token_ids, masks
+#===============================================================#
 
 
 if(len(sys.argv) != 3):
