@@ -22,8 +22,8 @@ transactions = 0
 textual_transactions = 0
 transactions_date_wise = {}
 pattern = re.compile("[A-Za-z0-9]+")
-phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
 email = re.compile("[^@]+@[^@]+\.[^@]+")
+phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
 
 #===============================================================#
 class BertClassifier(tf.keras.Model):    
