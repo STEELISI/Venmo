@@ -45,6 +45,21 @@ class BertClassifier(tf.keras.Model):
         return cls_output
 
 #===============================================================#
+
+BATCH = 10000
+c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = [0] * BATCH
+cols_name = ['Date', 'Note', 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
+label_cols = cols_name[2:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
+
+bert_model_name = 'bert-base-uncased'
+tokenizer = BertTokenizer.from_pretrained(bert_model_name, do_lower_case=True)
+model = BertClassifier(TFBertModel.from_pretrained(bert_model_name), len(label_cols))
+#model.load_weights('')
+
+date_category_stat = {}  # number of each category for each day
+
+#===============================================================#
+
 """
 Convert all letters to lower or upper case (common : lower case)
 """
