@@ -3,7 +3,7 @@
 # python3 datewise_textual_transactions_count.py <path to the input json file>  <path to the output file>    #
 #*********************************************************************************************************** #
 # Example:                                                                                                   #
-#python3 datewise_textual_transactions_count.py /Users/rajattan/venmo/dummy.json ./transactions_date_wise.txt#
+# python3 BERT_Classification_script.py /Users/rajattan/venmo/dummy.json ./transactions_date_wise.txt        #
 #============================================================================================================#
 import re
 import sys
@@ -80,7 +80,7 @@ if(len(sys.argv) != 3):
     print("==========================================================================")
     print("SORRY!! Please provide the path to the INPUT json file and the OUTPUT file")
     print("==========================================================================")
-    print("Example: python3 datewise_transactions_count.py ./dummy.json ./output.txt ")
+    print("Example: python3 BERT_Classification_script.py ./dummy.json ./output.txt  ")
     print("==========================================================================")
     sys.exit()
 
