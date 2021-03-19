@@ -116,6 +116,26 @@ def preprocessing(note):
     tokens = [t for t in tokens if len(t) != 0]
     return tokens
 #===============================================================#
+"""
+Build prediction table
+"""
+def build_table(c0, c1):
+    table = zip(c0, c1, c2, c3, c4, c5, c6, c7, c8, c9)
+    table = list(table)
+    return [list(r) for r in table]
+
+#===============================================================#
+"""
+Build dataset
+"""
+def create_dataset(data_tuple, epochs=1, batch_size=32):
+    dataset = tf.data.Dataset.from_tensor_slices(data_tuple)
+    dataset = dataset.repeat(epochs)
+    dataset = dataset.batch(batch_size)
+    return dataset
+#===============================================================#
+
+
 
 if(len(sys.argv) != 3):
     print("==========================================================================")
