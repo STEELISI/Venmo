@@ -16,6 +16,7 @@ textual_transactions = 0
 transactions_date_wise = {}
 pattern = re.compile("[A-Za-z0-9]+")
 phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
+email = re.compile("[^@]+@[^@]+\.[^@]+")
 
 """
 Convert all letters to lower or upper case (common : lower case)
@@ -52,6 +53,15 @@ def contains_phn(note):
     if(phno.search(note)):
         return True
     return False
+
+"""
+Email address regex
+"""
+def contains_email(note):
+    if(email.search(note)):
+        return True
+    return False
+
 
 """
 Preprocessing Work 
