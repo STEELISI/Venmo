@@ -164,25 +164,6 @@ def create_dataset(data_tuple, epochs=1, batch_size=32, buffer_size=100, train=F
 
 #===============================================================#
 """
-BERT encoder
-"""
-def encoder(notes, tokenizer):
-    token_ids = []
-    masks = []
-    for msg in notes:
-        print(msg)
-        encoded_dict = tokenizer.encode_plus(
-                            msg,    # note to encode.
-                            add_special_tokens=True,    # Add '[CLS]' and '[SEP]'.
-                            max_length=10,  # Pad & truncate all sentences.
-                            padding='max_length',
-                            return_attention_mask=True  # Construct attn. mask.
-                        )
-        token_ids.append(encoded_dict['input_ids'])
-        masks.append(encoded_dict['attention_mask'])
-    return token_ids, masks
-#===============================================================#
-"""
 Update stats
 """
 def update(row):
@@ -275,9 +256,6 @@ if cnt != 0:
     table = list(table)
     table = [list(r) for r in table]
     test_preds = pd.DataFrame(np.array(table), columns=cols_name)
-    print("==== BEFORE ====")
-    print(test_preds)
-    print('Number of testing sentences: {}\n'.format(len(test_preds)))
     MAX_LEN = 10
     test_input_ids = []
     test_attention_masks = []
