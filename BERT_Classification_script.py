@@ -196,7 +196,6 @@ for line in f:
         if len(tokens) > 50:
             continue
         note = ' '.join(tokens).strip()
-        print(note, english_ch.search(note))
         if(english_ch.search(note) == None or len(note) == 0):
             continue
         if(date[0] not in transactions_date_wise):
@@ -241,7 +240,14 @@ for line in f:
 
             # update stats
             for index, row in test_preds.iterrows():
-                update(row)
+                #update(row)
+                date = str(row['Date'])
+                if date not in date_category_stat:
+                    date_category_stat[date] = {col:0 for col in label_cols}
+                for col in label_cols:
+                    if row[col] == 0:
+                        continue
+                    date_category_stat[date][col] = date_category_stat[date][col] + 1
             # reset counter
             cnt = -1
             
@@ -289,14 +295,22 @@ if cnt != 0:
     # update stat
     
     for index, row in test_preds.iterrows():
-        update(row)
+        #update(row)
+        date = str(row['Date'])
+        if date not in date_category_stat:
+            date_category_stat[date] = {col:0 for col in label_cols}
+        for col in label_cols:
+            if row[col] == 0:
+                continue
+            date_category_stat[date][col] = date_category_stat[date][col] + 1
+
     # reset counter
     cnt = 0
     
 # Write stats
 df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=label_cols)
 df_stat = df_stat.rename_axis('Date').reset_index()
-df_stat.to_csv('./result.csv', index=False)
+df_stat.to_csv(sys.argv[2] + ".output", index=False)
 
 
 
