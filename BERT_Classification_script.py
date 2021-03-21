@@ -206,7 +206,7 @@ for line in f:
         dates[cnt] = date[0]
         notes[cnt] = note
         
-        if cnt == BATCH:
+        if cnt == (BATCH-1):
             # form dataset
             c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
             table = zip(dates, notes, c2, c3, c4, c5, c6, c7, c8, c9)
@@ -243,7 +243,7 @@ for line in f:
             for index, row in test_preds.iterrows():
                 update(row)
             # reset counter
-            cnt = 0
+            cnt = -1
             
         cnt = cnt + 1
 
