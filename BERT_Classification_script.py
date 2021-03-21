@@ -126,20 +126,6 @@ def preprocessing(note):
     return tokens
 #===============================================================#
 """
-Build prediction table
-"""
-def build_table(c0, c1):
-    table = zip(c0, c1, c2, c3, c4, c5, c6, c7, c8, c9)
-    table = list(table)
-    return [list(r) for r in table]
-'''
-def build_table(c1):
-    table = zip( c1, c2, c3, c4, c5, c6, c7, c8, c9)
-    table = list(table)
-    return [list(r) for r in table]
-'''
-#===============================================================#
-"""
 Build dataset
 """
 '''
