@@ -18,6 +18,7 @@ from transformers import BertTokenizer
 from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
+MAX_LEN = 10
 BATCH = 10000
 TEST_BATCH = 32
 transactions = 0
@@ -205,19 +206,37 @@ for line in f:
         
         if cnt == BATCH:
             # form dataset
-            table = build_table(dates, notes)
+            c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
+            table = zip(dates, notes, c2, c3, c4, c5, c6, c7, c8, c9)
+            table = list(table)
+            table = [list(r) for r in table]
             test_preds = pd.DataFrame(np.array(table), columns=cols_name)
-            input_ids, attention_masks = encoder(test_preds['Note'], tokenizer)
-            test_dataset = create_dataset((input_ids, attention_masks), epochs=1, batch_size=32, train=False)
+
+            test_input_ids = []
+            test_attention_masks = []
+
+            for sent in test_preds['Note']:
+                encoded_dict = tokenizer.encode_plus(
+                                    sent,                      # Sentence to encode.
+                                    add_special_tokens = True, # Add '[CLS]' and '[SEP]'
+                                    truncation='longest_first',
+                                    max_length = MAX_LEN,           # Pad & truncate all sentences.
+                                    pad_to_max_length = True,
+                                    return_attention_mask = True,   # Construct attn. masks.
+                                    # return_tensors = 'tf',     # Return tensorflow tensor.
+                               )
+                test_input_ids.append(encoded_dict['input_ids'])
+                test_attention_masks.append(encoded_dict['attention_mask'])
+
+            test_dataset = create_dataset((test_input_ids, test_attention_masks), epochs=1, batch_size=32, train=False)
             # prediction
             for i, (token_ids, masks) in enumerate(test_dataset):
                 start = i * TEST_BATCH
                 end = (i+1) * TEST_BATCH - 1
-                #test_preds.loc[start:end][label_cols] = predict(token_ids, masks)
-                predictions = model(token_ids, attention_mask=masks).numpy()
-                print(predictions)
+                predictions = saved_model(token_ids, attention_mask=masks).numpy()
                 binary_predictions = np.where(predictions > 0.5, 1, 0)
-                test_preds.loc[start:end][label_cols] = binary_predictions
+                test_preds.loc[start:end, label_cols] = binary_predictions
+
             # update stats
             for index, row in test_preds.iterrows():
                 update(row)
@@ -240,7 +259,6 @@ if cnt != 0:
     table = list(table)
     table = [list(r) for r in table]
     test_preds = pd.DataFrame(np.array(table), columns=cols_name)
-    MAX_LEN = 10
     test_input_ids = []
     test_attention_masks = []
 
