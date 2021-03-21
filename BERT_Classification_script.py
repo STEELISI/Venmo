@@ -219,12 +219,10 @@ for line in f:
         
         if cnt == BATCH:
             # form dataset
-      
             table = build_table(dates, notes)
-            #table = build_table(notes)
             test_preds = pd.DataFrame(np.array(table), columns=cols_name)
             input_ids, attention_masks = encoder(test_preds['Note'], tokenizer)
-            test_dataset = create_dataset((input_ids, attention_masks), epochs=1, batch_size=16)
+            test_dataset = create_dataset((input_ids, attention_masks), epochs=1, batch_size=32, train=False)
             # prediction
             for i, (token_ids, masks) in enumerate(test_dataset):
                 start = i * TEST_BATCH
