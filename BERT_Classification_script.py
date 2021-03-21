@@ -62,11 +62,10 @@ label_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOL
 bert_model_name = 'bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(bert_model_name, do_lower_case=True)
 
-'''
+
 saved_model = BertClassifier(TFBertModel.from_pretrained(bert_model_name), len(label_cols))
 saved_model.load_weights(MODEL_FILE)
 print("\n MODEL LOADED\n\n\n\n\n")
-'''
 
 date_category_stat = {}  # number of each category for each day
 
@@ -306,8 +305,10 @@ if cnt != 0:
                        )
         test_input_ids.append(encoded_dict['input_ids'])
         test_attention_masks.append(encoded_dict['attention_mask'])
+    '''
     saved_model = BertClassifier(TFBertModel.from_pretrained(bert_model_name), len(label_cols))
     saved_model.load_weights(MODEL_FILE)
+    '''
 
 
     #test_dataset = create_dataset((test_input_ids, test_attention_masks), epochs=1, batch_size=32)
@@ -331,12 +332,12 @@ if cnt != 0:
     print(test_preds)
     test_preds.to_csv('dummy.txt', index=False)
     # update stat
-    '''
+    
     for index, row in test_preds.iterrows():
         update(row)
     # reset counter
     cnt = 0
-    '''
+    
 # Write stats
 df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=label_cols)
 df_stat = df_stat.rename_axis('Date').reset_index()
