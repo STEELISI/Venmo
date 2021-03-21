@@ -54,14 +54,12 @@ class BertClassifier(tf.keras.Model):
 c0 = c1 = [' '] * BATCH
 c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * BATCH
 cols_name = ['Date', 'Note', 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
-#cols_name = ['Note', 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 label_cols = cols_name[2:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
 
-label_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
+#label_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 
 bert_model_name = 'bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(bert_model_name, do_lower_case=True)
-
 
 saved_model = BertClassifier(TFBertModel.from_pretrained(bert_model_name), len(label_cols))
 saved_model.load_weights(MODEL_FILE)
@@ -270,25 +268,16 @@ f.close()
 
 # Last batch
 if cnt != 0:
-    # form dataset
-    #table = build_table(dates, notes)
-    #table = build_table(notes)
     del dates[cnt:]
     del notes[cnt:]
     c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
     table = zip(dates, notes, c2, c3, c4, c5, c6, c7, c8, c9)
-    #table = zip(notes, c2, c3, c4, c5, c6, c7, c8, c9)
     table = list(table)
     table = [list(r) for r in table]
     test_preds = pd.DataFrame(np.array(table), columns=cols_name)
     print("==== BEFORE ====")
     print(test_preds)
     print('Number of testing sentences: {}\n'.format(len(test_preds)))
-    #input_ids, attention_masks = encoder(test_preds['Note'], tokenizer)
-    #input_ids, attention_masks = encoder(test_preds['Note'], tokenizer)
-    #print(input_ids, attention_masks)
-    #print("FINE")
-    #sys.exit()
     MAX_LEN = 10
     test_input_ids = []
     test_attention_masks = []
@@ -305,32 +294,16 @@ if cnt != 0:
                        )
         test_input_ids.append(encoded_dict['input_ids'])
         test_attention_masks.append(encoded_dict['attention_mask'])
-    '''
-    saved_model = BertClassifier(TFBertModel.from_pretrained(bert_model_name), len(label_cols))
-    saved_model.load_weights(MODEL_FILE)
-    '''
 
 
-    #test_dataset = create_dataset((test_input_ids, test_attention_masks), epochs=1, batch_size=32)
     test_dataset = create_dataset((test_input_ids, test_attention_masks), epochs=1, batch_size=32, train=False)
-    print(test_dataset)
     # prediction
     for i, (token_ids, masks) in enumerate(test_dataset):
         start = i * TEST_BATCH
         end = (i+1) * TEST_BATCH - 1
-        print(" START " )
-        print(start)
-        print(" END ")
-        print(end)
-        #test_preds.loc[start:end][label_cols] = predict(token_ids, masks)
         predictions = saved_model(token_ids, attention_mask=masks).numpy()
-        print(predictions)
         binary_predictions = np.where(predictions > 0.5, 1, 0)
-        print(binary_predictions)
         test_preds.loc[start:end, label_cols] = binary_predictions
-    print("==== AFTER ====")
-    print(test_preds)
-    test_preds.to_csv('dummy.txt', index=False)
     # update stat
     
     for index, row in test_preds.iterrows():
