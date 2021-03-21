@@ -33,6 +33,19 @@ email = re.compile("[^@]+@[^@]+\.[^@]+")
 phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
 
 #===============================================================#
+
+if(len(sys.argv) != 3):
+    print("==========================================================================")
+    print("SORRY!! Please provide the path to the INPUT json file and the OUTPUT file")
+    print("==========================================================================")
+    print("Example: python3 BERT_Classification_script.py ./dummy.json ./output.txt  ")
+    print("==========================================================================")
+    sys.exit()
+
+f = open(sys.argv[1])
+outputfile = open(sys.argv[2],"w")
+
+#===============================================================#
 class BertClassifier(tf.keras.Model):    
     def __init__(self, bert: TFBertModel, num_classes: int):
         super().__init__()
@@ -164,17 +177,6 @@ def update(row):
 #===============================================================#
 #   MAIN FLOW                                                   #
 #===============================================================#
-
-if(len(sys.argv) != 3):
-    print("==========================================================================")
-    print("SORRY!! Please provide the path to the INPUT json file and the OUTPUT file")
-    print("==========================================================================")
-    print("Example: python3 BERT_Classification_script.py ./dummy.json ./output.txt  ")
-    print("==========================================================================")
-    sys.exit()
-
-f = open(sys.argv[1])
-outputfile = open(sys.argv[2],"w")
 
 for line in f:
     data = json.loads(line)
