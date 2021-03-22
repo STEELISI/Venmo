@@ -25,9 +25,15 @@ transactions = 0
 dates = [''] * BATCH
 notes = [''] * BATCH
 cnt = 0 # counter
+keywords = set()
 textual_transactions = 0
 transactions_date_wise = {}
+transactions_ph = {}
+transactions_email = {}
+transactions_acc = {}
+transactions_invoice = {}
 MODEL_FILE = 'BERT_MODEL/checkpoint_EPOCHS_6a'
+PATH_TO_KEYWORDS_LIST = 'data/UNIQ_KEYWORDS_LIST.txt'
 english_ch = re.compile("[A-Za-z0-9]+")
 email = re.compile("[^@]+@[^@]+\.[^@]+")
 phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
@@ -128,6 +134,22 @@ def contains_email(note):
     return False
 #===============================================================#
 """
+Account Details
+"""
+def contains_acc(note):
+    if("password" in note or "passwd" in note or "user id" in note or "userid" in note or "username" in note):
+        return True
+    return False
+#===============================================================#
+"""
+Invoice Details
+"""
+def contains_invoice(note):
+    if("invoice" in note or "tracking" in note):
+        return True
+    return False
+#===============================================================#
+"""
 Preprocessing Work 
 """
 def preprocessing(note):
@@ -174,6 +196,14 @@ def update(row):
         if row[col] == 0:
             continue
         date_category_stat[date][col] = date_category_stat[date][col] + 1
+
+
+#===============================================================#
+with open(PATH_TO_KEYWORDS_LIST,'r') as fp:
+    for l in fp:
+        keywords.add(''.join(convert_letters(l.strip())))
+
+
 #===============================================================#
 #   MAIN FLOW                                                   #
 #===============================================================#
@@ -195,9 +225,49 @@ for line in f:
 
         if len(tokens) > 50:
             continue
+        if(contains_phn(note)):
+            if(date[0] not in transactions_ph):
+                transactions_ph[date[0]] = 0
+            transactions_ph[date[0]] = transactions_ph[date[0]] + 1
+
+        if(contains_email(note)):
+            if(date[0] not in transactions_email):
+                transactions_email[date[0]] = 0
+            transactions_email[date[0]] = transactions_email[date[0]] + 1
+
+        if(contains_acc(note)):
+            if(date[0] not in transactions_acc):
+                transactions_acc[date[0]] = 0
+            transactions_acc[date[0]] = transactions_acc[date[0]] + 1
+
+        if(contains_invoice(note)):
+            if(date[0] not in transactions_invoice):
+                transactions_invoice[date[0]] = 0
+            transactions_invoice[date[0]] = transactions_invoice[date[0]] + 1
+
         note = ' '.join(tokens).strip()
         if(english_ch.search(note) == None or len(note) == 0):
             continue
+
+        bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
+        flag = 0
+        for t in tokens:
+            if(t == "id" or t == "code"):
+                if(date[0] not in transactions_acc):
+                    transactions_acc[date[0]] = 0
+                transactions_acc[date[0]] = transactions_acc[date[0]] + 1
+            if(t in keywords):
+                flag = 1
+                break 
+        
+        if(flag == 0):
+            for bi in bigrams:
+                if(bi in keywords):
+                    flag = 1
+                    break
+        if(flag == 0):
+            continue
+
         if(date[0] not in transactions_date_wise):
             transactions_date_wise[date[0]] = 0
         transactions_date_wise[date[0]] = transactions_date_wise[date[0]] + 1
@@ -320,4 +390,21 @@ for k,v in sorted(transactions_date_wise.items()):
 
 outputfile.write("TOTAL NUMBER OF TRANSACTIONS ARE :" + str(transactions))
 outputfile.write("\nTOTAL NUMBER OF TEXTUAL TRANSACTIONS IN ENGLISH ARE :" + str(textual_transactions))
+
+outputfile.write("\nDATE #EMAILS \n")
+for k,v in sorted(transactions_email.items()):
+    outputfile.write(str(k) + " " + str(v) + "\n")
+
+outputfile.write("DATE #PHONE \n")
+for k,v in sorted(transactions_ph.items()):
+    outputfile.write(str(k) + " " + str(v) + "\n")
+
+outputfile.write("DATE #ACCOUNT \n")
+for k,v in sorted(transactions_acc.items()):
+    outputfile.write(str(k) + " " + str(v) + "\n")
+
+outputfile.write("DATE #INVOICE \n")
+for k,v in sorted(transactions_invoice.items()):
+    outputfile.write(str(k) + " " + str(v) + "\n")
+
 outputfile.close()
