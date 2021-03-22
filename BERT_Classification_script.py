@@ -18,18 +18,38 @@ from transformers import BertTokenizer
 from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
+MAX_LEN = 10
 BATCH = 10000
 TEST_BATCH = 32
 transactions = 0
 dates = [''] * BATCH
 notes = [''] * BATCH
 cnt = 0 # counter
+keywords = set()
 textual_transactions = 0
 transactions_date_wise = {}
+transactions_ph = {}
+transactions_email = {}
+transactions_acc = {}
+transactions_invoice = {}
 MODEL_FILE = 'BERT_MODEL/checkpoint_EPOCHS_6a'
+PATH_TO_KEYWORDS_LIST = 'data/UNIQ_KEYWORDS_LIST.txt'
 english_ch = re.compile("[A-Za-z0-9]+")
 email = re.compile("[^@]+@[^@]+\.[^@]+")
 phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
+
+#===============================================================#
+
+if(len(sys.argv) != 3):
+    print("==========================================================================")
+    print("SORRY!! Please provide the path to the INPUT json file and the OUTPUT file")
+    print("==========================================================================")
+    print("Example: python3 BERT_Classification_script.py ./dummy.json ./output.txt  ")
+    print("==========================================================================")
+    sys.exit()
+
+f = open(sys.argv[1])
+outputfile = open(sys.argv[2],"w")
 
 #===============================================================#
 class BertClassifier(tf.keras.Model):    
@@ -54,19 +74,16 @@ class BertClassifier(tf.keras.Model):
 c0 = c1 = [' '] * BATCH
 c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * BATCH
 cols_name = ['Date', 'Note', 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
-#cols_name = ['Note', 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 label_cols = cols_name[2:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
 
-label_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
+#label_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 
 bert_model_name = 'bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(bert_model_name, do_lower_case=True)
 
-'''
 saved_model = BertClassifier(TFBertModel.from_pretrained(bert_model_name), len(label_cols))
 saved_model.load_weights(MODEL_FILE)
 print("\n MODEL LOADED\n\n\n\n\n")
-'''
 
 date_category_stat = {}  # number of each category for each day
 
@@ -117,6 +134,22 @@ def contains_email(note):
     return False
 #===============================================================#
 """
+Account Details
+"""
+def contains_acc(note):
+    if("password" in note or "passwd" in note or "user id" in note or "userid" in note or "username" in note):
+        return True
+    return False
+#===============================================================#
+"""
+Invoice Details
+"""
+def contains_invoice(note):
+    if("invoice" in note or "tracking" in note):
+        return True
+    return False
+#===============================================================#
+"""
 Preprocessing Work 
 """
 def preprocessing(note):
@@ -127,20 +160,6 @@ def preprocessing(note):
     tokens = remove_blanc(tokens)
     tokens = [t for t in tokens if len(t) != 0]
     return tokens
-#===============================================================#
-"""
-Build prediction table
-"""
-def build_table(c0, c1):
-    table = zip(c0, c1, c2, c3, c4, c5, c6, c7, c8, c9)
-    table = list(table)
-    return [list(r) for r in table]
-'''
-def build_table(c1):
-    table = zip( c1, c2, c3, c4, c5, c6, c7, c8, c9)
-    table = list(table)
-    return [list(r) for r in table]
-'''
 #===============================================================#
 """
 Build dataset
@@ -167,25 +186,6 @@ def create_dataset(data_tuple, epochs=1, batch_size=32, buffer_size=100, train=F
 
 #===============================================================#
 """
-BERT encoder
-"""
-def encoder(notes, tokenizer):
-    token_ids = []
-    masks = []
-    for msg in notes:
-        print(msg)
-        encoded_dict = tokenizer.encode_plus(
-                            msg,    # note to encode.
-                            add_special_tokens=True,    # Add '[CLS]' and '[SEP]'.
-                            max_length=10,  # Pad & truncate all sentences.
-                            padding='max_length',
-                            return_attention_mask=True  # Construct attn. mask.
-                        )
-        token_ids.append(encoded_dict['input_ids'])
-        masks.append(encoded_dict['attention_mask'])
-    return token_ids, masks
-#===============================================================#
-"""
 Update stats
 """
 def update(row):
@@ -196,20 +196,17 @@ def update(row):
         if row[col] == 0:
             continue
         date_category_stat[date][col] = date_category_stat[date][col] + 1
+
+
+#===============================================================#
+with open(PATH_TO_KEYWORDS_LIST,'r') as fp:
+    for l in fp:
+        keywords.add(''.join(convert_letters(l.strip())))
+
+
 #===============================================================#
 #   MAIN FLOW                                                   #
 #===============================================================#
-
-if(len(sys.argv) != 3):
-    print("==========================================================================")
-    print("SORRY!! Please provide the path to the INPUT json file and the OUTPUT file")
-    print("==========================================================================")
-    print("Example: python3 BERT_Classification_script.py ./dummy.json ./output.txt  ")
-    print("==========================================================================")
-    sys.exit()
-
-f = open(sys.argv[1])
-outputfile = open(sys.argv[2],"w")
 
 for line in f:
     data = json.loads(line)
@@ -228,10 +225,49 @@ for line in f:
 
         if len(tokens) > 50:
             continue
+        if(contains_phn(note)):
+            if(date[0] not in transactions_ph):
+                transactions_ph[date[0]] = 0
+            transactions_ph[date[0]] = transactions_ph[date[0]] + 1
+
+        if(contains_email(note)):
+            if(date[0] not in transactions_email):
+                transactions_email[date[0]] = 0
+            transactions_email[date[0]] = transactions_email[date[0]] + 1
+
+        if(contains_acc(note)):
+            if(date[0] not in transactions_acc):
+                transactions_acc[date[0]] = 0
+            transactions_acc[date[0]] = transactions_acc[date[0]] + 1
+
+        if(contains_invoice(note)):
+            if(date[0] not in transactions_invoice):
+                transactions_invoice[date[0]] = 0
+            transactions_invoice[date[0]] = transactions_invoice[date[0]] + 1
+
         note = ' '.join(tokens).strip()
-        print(note, english_ch.search(note))
         if(english_ch.search(note) == None or len(note) == 0):
             continue
+
+        bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
+        flag = 0
+        for t in tokens:
+            if(t == "id" or t == "code"):
+                if(date[0] not in transactions_acc):
+                    transactions_acc[date[0]] = 0
+                transactions_acc[date[0]] = transactions_acc[date[0]] + 1
+            if(t in keywords):
+                flag = 1
+                break 
+        
+        if(flag == 0):
+            for bi in bigrams:
+                if(bi in keywords):
+                    flag = 1
+                    break
+        if(flag == 0):
+            continue
+
         if(date[0] not in transactions_date_wise):
             transactions_date_wise[date[0]] = 0
         transactions_date_wise[date[0]] = transactions_date_wise[date[0]] + 1
@@ -239,28 +275,51 @@ for line in f:
         dates[cnt] = date[0]
         notes[cnt] = note
         
-        if cnt == BATCH:
+        if cnt == (BATCH-1):
             # form dataset
-      
-            table = build_table(dates, notes)
-            #table = build_table(notes)
+            c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
+            table = zip(dates, notes, c2, c3, c4, c5, c6, c7, c8, c9)
+            table = list(table)
+            table = [list(r) for r in table]
             test_preds = pd.DataFrame(np.array(table), columns=cols_name)
-            input_ids, attention_masks = encoder(test_preds['Note'], tokenizer)
-            test_dataset = create_dataset((input_ids, attention_masks), epochs=1, batch_size=16)
+
+            test_input_ids = []
+            test_attention_masks = []
+
+            for sent in test_preds['Note']:
+                encoded_dict = tokenizer.encode_plus(
+                                    sent,                      # Sentence to encode.
+                                    add_special_tokens = True, # Add '[CLS]' and '[SEP]'
+                                    truncation='longest_first',
+                                    max_length = MAX_LEN,           # Pad & truncate all sentences.
+                                    pad_to_max_length = True,
+                                    return_attention_mask = True,   # Construct attn. masks.
+                                    # return_tensors = 'tf',     # Return tensorflow tensor.
+                               )
+                test_input_ids.append(encoded_dict['input_ids'])
+                test_attention_masks.append(encoded_dict['attention_mask'])
+
+            test_dataset = create_dataset((test_input_ids, test_attention_masks), epochs=1, batch_size=32, train=False)
             # prediction
             for i, (token_ids, masks) in enumerate(test_dataset):
                 start = i * TEST_BATCH
                 end = (i+1) * TEST_BATCH - 1
-                #test_preds.loc[start:end][label_cols] = predict(token_ids, masks)
-                predictions = model(token_ids, attention_mask=masks).numpy()
-                print(predictions)
+                predictions = saved_model(token_ids, attention_mask=masks).numpy()
                 binary_predictions = np.where(predictions > 0.5, 1, 0)
-                test_preds.loc[start:end][label_cols] = binary_predictions
+                test_preds.loc[start:end, label_cols] = binary_predictions
+
             # update stats
             for index, row in test_preds.iterrows():
-                update(row)
+                #update(row)
+                date = str(row['Date'])
+                if date not in date_category_stat:
+                    date_category_stat[date] = {col:0 for col in label_cols}
+                for col in label_cols:
+                    if row[col] == 0:
+                        continue
+                    date_category_stat[date][col] = date_category_stat[date][col] + 1
             # reset counter
-            cnt = 0
+            cnt = -1
             
         cnt = cnt + 1
 
@@ -271,26 +330,13 @@ f.close()
 
 # Last batch
 if cnt != 0:
-    # form dataset
-    #table = build_table(dates, notes)
-    #table = build_table(notes)
     del dates[cnt:]
     del notes[cnt:]
     c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
     table = zip(dates, notes, c2, c3, c4, c5, c6, c7, c8, c9)
-    #table = zip(notes, c2, c3, c4, c5, c6, c7, c8, c9)
     table = list(table)
     table = [list(r) for r in table]
     test_preds = pd.DataFrame(np.array(table), columns=cols_name)
-    print("==== BEFORE ====")
-    print(test_preds)
-    print('Number of testing sentences: {}\n'.format(len(test_preds)))
-    #input_ids, attention_masks = encoder(test_preds['Note'], tokenizer)
-    #input_ids, attention_masks = encoder(test_preds['Note'], tokenizer)
-    #print(input_ids, attention_masks)
-    #print("FINE")
-    #sys.exit()
-    MAX_LEN = 10
     test_input_ids = []
     test_attention_masks = []
 
@@ -306,41 +352,35 @@ if cnt != 0:
                        )
         test_input_ids.append(encoded_dict['input_ids'])
         test_attention_masks.append(encoded_dict['attention_mask'])
-    saved_model = BertClassifier(TFBertModel.from_pretrained(bert_model_name), len(label_cols))
-    saved_model.load_weights(MODEL_FILE)
 
 
-    #test_dataset = create_dataset((test_input_ids, test_attention_masks), epochs=1, batch_size=32)
     test_dataset = create_dataset((test_input_ids, test_attention_masks), epochs=1, batch_size=32, train=False)
-    print(test_dataset)
     # prediction
     for i, (token_ids, masks) in enumerate(test_dataset):
         start = i * TEST_BATCH
         end = (i+1) * TEST_BATCH - 1
-        print(" START " )
-        print(start)
-        print(" END ")
-        print(end)
-        #test_preds.loc[start:end][label_cols] = predict(token_ids, masks)
         predictions = saved_model(token_ids, attention_mask=masks).numpy()
-        print(predictions)
         binary_predictions = np.where(predictions > 0.5, 1, 0)
-        print(binary_predictions)
         test_preds.loc[start:end, label_cols] = binary_predictions
-    print("==== AFTER ====")
-    print(test_preds)
-    test_preds.to_csv('dummy.txt', index=False)
     # update stat
-    '''
+    
     for index, row in test_preds.iterrows():
-        update(row)
+        #update(row)
+        date = str(row['Date'])
+        if date not in date_category_stat:
+            date_category_stat[date] = {col:0 for col in label_cols}
+        for col in label_cols:
+            if row[col] == 0:
+                continue
+            date_category_stat[date][col] = date_category_stat[date][col] + 1
+
     # reset counter
     cnt = 0
-    '''
+    
 # Write stats
 df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=label_cols)
 df_stat = df_stat.rename_axis('Date').reset_index()
-df_stat.to_csv('./result.csv', index=False)
+df_stat.to_csv(sys.argv[2] + ".output", index=False)
 
 
 
@@ -350,4 +390,21 @@ for k,v in sorted(transactions_date_wise.items()):
 
 outputfile.write("TOTAL NUMBER OF TRANSACTIONS ARE :" + str(transactions))
 outputfile.write("\nTOTAL NUMBER OF TEXTUAL TRANSACTIONS IN ENGLISH ARE :" + str(textual_transactions))
+
+outputfile.write("\nDATE #EMAILS \n")
+for k,v in sorted(transactions_email.items()):
+    outputfile.write(str(k) + " " + str(v) + "\n")
+
+outputfile.write("DATE #PHONE \n")
+for k,v in sorted(transactions_ph.items()):
+    outputfile.write(str(k) + " " + str(v) + "\n")
+
+outputfile.write("DATE #ACCOUNT \n")
+for k,v in sorted(transactions_acc.items()):
+    outputfile.write(str(k) + " " + str(v) + "\n")
+
+outputfile.write("DATE #INVOICE \n")
+for k,v in sorted(transactions_invoice.items()):
+    outputfile.write(str(k) + " " + str(v) + "\n")
+
 outputfile.close()
