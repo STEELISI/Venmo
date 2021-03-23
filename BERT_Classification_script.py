@@ -324,7 +324,7 @@ for line in f:
         cnt = cnt + 1
 
 
-    except TypeError:
+    except:
         continue        
 f.close()
 

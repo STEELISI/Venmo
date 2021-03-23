@@ -37,7 +37,7 @@ for line in f:
         if(date[0] not in transactions_date_wise):
             transactions_date_wise[date[0]] = 0
         transactions_date_wise[date[0]] = transactions_date_wise[date[0]] + 1
-    except TypeError:
+    except:
         continue        
 f.close()
 

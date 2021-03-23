@@ -68,7 +68,7 @@ for line in f:
         if(string != "" and pattern.search(string)):
             transactions_date_wise[date[0]] = transactions_date_wise[date[0]] + 1
             textual_transactions = textual_transactions + 1
-    except TypeError:
+    except:
         continue        
 f.close()
 
