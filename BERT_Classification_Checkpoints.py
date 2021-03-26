@@ -27,8 +27,6 @@ dates = [''] * BATCH
 notes = [''] * BATCH
 cnt = 0 # counter
 keywords = set()
-textual_transactions = 0
-transactions_date_wise = {}
 date_category_stat = {}  # number of each category for each day
 date_personal_stat = {}
 
@@ -52,7 +50,7 @@ if(len(sys.argv) != 3):
     sys.exit()
 
 f = open(sys.argv[1])
-outputfile = open(sys.argv[2],"w")
+#outputfile = open(sys.argv[2],"w")
 
 #===============================================================#
 class BertClassifier(tf.keras.Model):    
@@ -228,29 +226,35 @@ for line in f:
 
         if(date[0] not in date_personal_stat):
             date_personal_stat[date[0]] = {col:0 for col in personal_cols}
+        per_flag = 0
 
         if(contains_phn(note)):
+            per_flag = 1
             if('P' not in date_personal_stat[date[0]]):
                 date_personal_stat[date[0]]['P'] = 0
             date_personal_stat[date[0]]['P'] = date_personal_stat[date[0]]['P'] + 1
 
         if(contains_email(note)):
+            per_flag = 1
             if('E' not in date_personal_stat[date[0]]):
                 date_personal_stat[date[0]]['E'] = 0
             date_personal_stat[date[0]]['E'] = date_personal_stat[date[0]]['E'] + 1
 
         if(contains_acc(note)):
+            per_flag = 1
             if('A' not in date_personal_stat[date[0]]):
                 date_personal_stat[date[0]]['A'] = 0
             date_personal_stat[date[0]]['A'] = date_personal_stat[date[0]]['A'] + 1
 
 
         if(contains_invoice(note)):
+            per_flag = 1
             if('I' not in date_personal_stat[date[0]]):
                 date_personal_stat[date[0]]['I'] = 0
             date_personal_stat[date[0]]['I'] = date_personal_stat[date[0]]['I'] + 1
 
         if(contains_address(note)):
+            per_flag = 1
             if('L' not in date_personal_stat[date[0]]):
                 date_personal_stat[date[0]]['L'] = 0
             date_personal_stat[date[0]]['L'] = date_personal_stat[date[0]]['L'] + 1
@@ -265,15 +269,18 @@ for line in f:
         flag = 0
         for t in tokens:
             if(t == "id" or t == "code"):
+                per_flag = 1
                 if('A' not in date_personal_stat[date[0]]):
                     date_personal_stat[date[0]]['A'] = 0
                 date_personal_stat[date[0]]['A'] = date_personal_stat[date[0]]['A'] + 1
-
+         
 
             if(t in keywords):
                 flag = 1
                 break 
-        
+        if(per_flag):
+            date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
+
         if(flag == 0):
             for bi in bigrams:
                 if(bi in keywords):
@@ -282,10 +289,6 @@ for line in f:
         if(flag == 0):
             continue
 
-        if(date[0] not in transactions_date_wise):
-            transactions_date_wise[date[0]] = 0
-        transactions_date_wise[date[0]] = transactions_date_wise[date[0]] + 1
-        textual_transactions = textual_transactions + 1
         dates[cnt] = date[0]
         notes[cnt] = note
         
@@ -403,50 +406,22 @@ if cnt != 0:
                  date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
                  sen_flag = 0
 
-
-
-    
-    for index, row in test_preds.iterrows():
-        #update(row)
-        date = str(row['Date'])
-        if date not in date_category_stat:
-            date_category_stat[date] = {col:0 for col in sens_cols}
-        for col in label_cols:
-            if row[col] == 0:
-                continue
-            date_category_stat[date][col] = date_category_stat[date][col] + 1
-
-    # reset counter
-    cnt = 0
     
 # Write stats
-df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=label_cols)
+df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=sens_cols)
 df_stat = df_stat.rename_axis('Date').reset_index()
 df_stat.to_csv(sys.argv[2] + ".output", index=False)
 
 
+df_stat = pd.DataFrame.from_dict(date_personal_stat, orient='index', columns=personal_cols)
+df_stat = df_stat.rename_axis('Date').reset_index()
+df_stat.to_csv(sys.argv[2], index=False)
 
+
+'''
 outputfile.write("DATE #TEXTUAL_TRANSACTIONS \n")
 for k,v in sorted(transactions_date_wise.items()):
     outputfile.write(str(k) + " " + str(v) + "\n")
 
-outputfile.write("TOTAL NUMBER OF TRANSACTIONS ARE :" + str(transactions))
-outputfile.write("\nTOTAL NUMBER OF TEXTUAL TRANSACTIONS IN ENGLISH ARE :" + str(textual_transactions))
-
-outputfile.write("\nDATE #EMAILS \n")
-for k,v in sorted(transactions_email.items()):
-    outputfile.write(str(k) + " " + str(v) + "\n")
-
-outputfile.write("DATE #PHONE \n")
-for k,v in sorted(transactions_ph.items()):
-    outputfile.write(str(k) + " " + str(v) + "\n")
-
-outputfile.write("DATE #ACCOUNT \n")
-for k,v in sorted(transactions_acc.items()):
-    outputfile.write(str(k) + " " + str(v) + "\n")
-
-outputfile.write("DATE #INVOICE \n")
-for k,v in sorted(transactions_invoice.items()):
-    outputfile.write(str(k) + " " + str(v) + "\n")
-
 outputfile.close()
+'''
