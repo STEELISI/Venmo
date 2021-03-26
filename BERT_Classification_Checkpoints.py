@@ -25,10 +25,15 @@ TEST_BATCH = 32
 transactions = 0
 dates = [''] * BATCH
 notes = [''] * BATCH
+uname = [''] * BATCH
+tuname = [''] * BATCH
+
 cnt = 0 # counter
 keywords = set()
 date_category_stat = {}  # number of each category for each day
 date_personal_stat = {}
+sender = {}
+receiver = {}
 
 CHECKPOINT_INTERVAL = 100000
 MODEL_FILE = 'BERT_MODEL/checkpoint_EPOCHS_6a'
@@ -74,13 +79,13 @@ class BertClassifier(tf.keras.Model):
 #===============================================================#
 c0 = c1 = [' '] * BATCH
 c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * BATCH
-cols_name = ['Date', 'Note', 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
-label_cols = cols_name[2:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
+cols_name = ['Date', 'Note','uname','tuname','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
+label_cols = cols_name[4:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
 sens_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','T']
 
 personal_cols = ['A','E','I','L','P','T']
+userfields = ['S','P','T','A']
 
-#label_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 
 bert_model_name = 'bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(bert_model_name, do_lower_case=True)
@@ -221,8 +226,40 @@ for line in f:
         tokens = nltk.word_tokenize(note)
         tokens = preprocessing(note)
 
-        if len(tokens) > 50:
+        if('actor' not in data or 'username' not in data['actor'] or 'transactions' not in data or data['transactions'] is None  or 'target' not in data['transactions'][0] or 'username' not in data['transactions'][0]['target']):
             continue
+
+        username = data['actor']['username']
+        tusername = data['transactions'][0]['target']['username']
+
+
+        if(username not in sender):
+            sender[username] = {}
+            if('date_created' in data['actor']):
+                s = str(data['actor']['created_time'])
+                d = s.split("T")
+                sender[username]['joined'] = d[0]
+            sender[username]['dates'] = {}
+            if(date[0] not in sender[username]['dates']):
+                sender[username]['dates'][date[0]] = {col:0 for col in userfields}
+            sender[username]['dates'][date[0]]['A'] = sender[username]['dates'][date[0]]['A'] + 1
+
+
+        if(tusername not in receiver):
+            receiver[tusername] = {}
+            if('date_created' in data['transactions'][0]['target']):
+                s = str(data['transactions'][0]['target']['created_time'])
+                d = s.split("T")
+                receiver[tusername]['joined'] = d[0]
+            receiver[tusername]['dates'] = {}
+            if(date[0] not in receiver[tusername]['dates']):
+                receiver[tusername]['dates'][date[0]] = {col:0 for col in userfields}
+            receiver[tusername]['dates'][date[0]]['A'] = receiver[tusername]['dates'][date[0]]['A'] + 1
+
+        if(len(tokens) > 50):
+            continue
+  
+
 
         if(date[0] not in date_personal_stat):
             date_personal_stat[date[0]] = {col:0 for col in personal_cols}
@@ -278,8 +315,20 @@ for line in f:
             if(t in keywords):
                 flag = 1
                 break 
+
+
         if(per_flag):
-            date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
+            date_personal_stat[date[0]]['T'] = date_personal_stat[date]['T'] + 1
+            if(date[0] not in sender[username]['dates']):
+                sender[username]['dates'][date[0]] = {col:0 for col in userfields}
+            sender[username]['dates'][date[0]]['P'] = sender[username]['dates'][date[0]]['P'] + 1
+            sender[username]['dates'][date[0]]['T'] = sender[username]['dates'][date[0]]['T'] + 1
+            if(date[0] not in receiver[tusername]['dates']):
+                receiver[tusername]['dates'][date[0]] = {col:0 for col in userfields}
+            receiver[tusername]['dates'][date[0]]['P'] = receiver[tusername]['dates'][date[0]]['P'] + 1
+            receiver[tusername]['dates'][date[0]]['T'] = receiver[tusername]['dates'][date[0]]['T'] + 1
+            
+            
 
         if(flag == 0):
             for bi in bigrams:
@@ -331,6 +380,9 @@ for line in f:
                 sen_flag = 1
                 per_flag = 1
                 date = str(row['Date'])
+                un = str(row['uname'])
+                tun = str(row['tuname'])
+
                 if date not in date_category_stat:
                     date_category_stat[date] = {col:0 for col in sens_cols}
                 for col in label_cols:
@@ -338,11 +390,31 @@ for line in f:
                         continue
                     date_category_stat[date][col] = date_category_stat[date][col] + 1
                     if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
-                         date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
-                         per_flag = 0
+                        date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
+                        per_flag = 0
+                        if(date not in sender[un]['dates']):
+                            sender[un]['dates'][date] = {col:0 for col in userfields}
+                        sender[un]['dates'][date]['P'] = sender[un]['dates'][date]['P'] + 1
+                        sender[un]['dates'][date]['T'] = sender[un]['dates'][date]['T'] + 1
+                        if(date not in receiver[tun]['dates']):
+                            receiver[tun]['dates'][date] = {col:0 for col in userfields}
+                        receiver[tun]['dates'][date]['P'] = receiver[tun]['dates'][date]['P'] + 1
+                        receiver[tun]['dates'][date]['T'] = receiver[tun]['dates'][date]['T'] + 1
+
+
+
                     elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
                          date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
                          sen_flag = 0
+                        if(date not in sender[un]['dates']):
+                            sender[un]['dates'][date] = {col:0 for col in userfields}
+                        sender[un]['dates'][date]['S'] = sender[un]['dates'][date]['S'] + 1
+                        sender[un]['dates'][date]['T'] = sender[un]['dates'][date]['T'] + 1
+
+                        if(date not in receiver[tun]['dates']):
+                            receiver[tun]['dates'][date] = {col:0 for col in userfields}
+                        receiver[tun]['dates'][date]['S'] = receiver[tun]['dates'][date]['S'] + 1
+                        receiver[tun]['dates'][date]['T'] = receiver[tun]['dates'][date]['T'] + 1
                     
             # reset counter
             cnt = -1
@@ -393,6 +465,8 @@ if cnt != 0:
         sen_flag = 1
         per_flag = 1
         date = str(row['Date'])
+        un = str(row['uname'])
+        tun = str(row['tuname'])
         if date not in date_category_stat:
             date_category_stat[date] = {col:0 for col in sens_cols}
         for col in label_cols:
@@ -400,11 +474,33 @@ if cnt != 0:
                 continue
             date_category_stat[date][col] = date_category_stat[date][col] + 1
             if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
-                 date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
-                 per_flag = 0
+                date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
+                per_flag = 0
+                if(date not in sender[un]['dates']):
+                    sender[un]['dates'][date] = {col:0 for col in userfields}
+                sender[un]['dates'][date]['P'] = sender[un]['dates'][date]['P'] + 1
+                sender[un]['dates'][date]['T'] = sender[un]['dates'][date]['T'] + 1
+                if(date not in receiver[tun]['dates']):
+                    receiver[tun]['dates'][date] = {col:0 for col in userfields}
+                receiver[tun]['dates'][date]['P'] = receiver[tun]['dates'][date]['P'] + 1
+                receiver[tun]['dates'][date]['T'] = receiver[tun]['dates'][date]['T'] + 1
+
+
             elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
-                 date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
-                 sen_flag = 0
+                date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
+                sen_flag = 0
+
+                if(date not in sender[un]['dates']):
+                    sender[un]['dates'][date] = {col:0 for col in userfields}
+                sender[un]['dates'][date]['S'] = sender[un]['dates'][date]['S'] + 1
+                sender[un]['dates'][date]['T'] = sender[un]['dates'][date]['T'] + 1
+
+                if(date not in receiver[tun]['dates']):
+                    receiver[tun]['dates'][date] = {col:0 for col in userfields}
+                receiver[tun]['dates'][date]['S'] = receiver[tun]['dates'][date]['S'] + 1
+                receiver[tun]['dates'][date]['T'] = receiver[tun]['dates'][date]['T'] + 1
+
+
 
     
 # Write stats
