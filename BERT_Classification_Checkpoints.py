@@ -78,8 +78,9 @@ c0 = c1 = [' '] * BATCH
 c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * BATCH
 cols_name = ['Date', 'Note', 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 label_cols = cols_name[2:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
+sens_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','T']
 
-personal_cols = ['A','E','I','L','P']
+personal_cols = ['A','E','I','L','P','T']
 
 #label_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 
@@ -194,21 +195,6 @@ def create_dataset(data_tuple, epochs=1, batch_size=32, buffer_size=100, train=F
         dataset = dataset.prefetch(1)
 
     return dataset
-
-
-#===============================================================#
-"""
-Update stats
-"""
-def update(row):
-    date = str(row['Date'])
-    if date not in date_category_stat:
-        date_category_stat[date] = {col:0 for col in label_cols}
-    for col in label_cols:
-        if row[col] == 0:
-            continue
-        date_category_stat[date][col] = date_category_stat[date][col] + 1
-
 
 #===============================================================#
 with open(PATH_TO_KEYWORDS_LIST,'r') as fp:
@@ -339,13 +325,22 @@ for line in f:
             # update stats
             for index, row in test_preds.iterrows():
                 #update(row)
+                sen_flag = 1
+                per_flag = 1
                 date = str(row['Date'])
                 if date not in date_category_stat:
-                    date_category_stat[date] = {col:0 for col in label_cols}
+                    date_category_stat[date] = {col:0 for col in sens_cols}
                 for col in label_cols:
                     if row[col] == 0:
                         continue
                     date_category_stat[date][col] = date_category_stat[date][col] + 1
+                    if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
+                         date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
+                         per_flag = 0
+                    elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
+                         date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
+                         sen_flag = 0
+                    
             # reset counter
             cnt = -1
             
@@ -391,12 +386,31 @@ if cnt != 0:
         binary_predictions = np.where(predictions > 0.5, 1, 0)
         test_preds.loc[start:end, label_cols] = binary_predictions
     # update stat
+    for index, row in test_preds.iterrows():
+        sen_flag = 1
+        per_flag = 1
+        date = str(row['Date'])
+        if date not in date_category_stat:
+            date_category_stat[date] = {col:0 for col in sens_cols}
+        for col in label_cols:
+            if row[col] == 0:
+                continue
+            date_category_stat[date][col] = date_category_stat[date][col] + 1
+            if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
+                 date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
+                 per_flag = 0
+            elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
+                 date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
+                 sen_flag = 0
+
+
+
     
     for index, row in test_preds.iterrows():
         #update(row)
         date = str(row['Date'])
         if date not in date_category_stat:
-            date_category_stat[date] = {col:0 for col in label_cols}
+            date_category_stat[date] = {col:0 for col in sens_cols}
         for col in label_cols:
             if row[col] == 0:
                 continue
