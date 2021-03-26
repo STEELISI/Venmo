@@ -83,7 +83,7 @@ cols_name = ['Date', 'Note','myr','uname','tuname','ADULT_CONTENT', 'HEALTH', 'D
 label_cols = cols_name[5:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
 sens_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','T']
 
-personal_cols = ['A','E','I','L','P','T']
+personal_cols = ['A','E','I','P','T']
 userfields = ['S','P','T','A']
 
 
@@ -213,11 +213,13 @@ for line in f:
     data = json.loads(line)
     transactions = transactions + 1
     try:
-        '''
+        
         if(transactions%CHECKPOINT_INTERVAL == 0):
             with open("checkpoint/datewise_transactions.txt", "wb") as myFile:
                 pickle.dump(date_category_stat, myFile)
-        '''
+        
+
+
         if(data is None or data['created_time'] is None):
             continue
         datetim = str(data['created_time'])
@@ -234,36 +236,36 @@ for line in f:
 
         username = data['actor']['username']
         tusername = data['transactions'][0]['target']['username']
-
-
+        
         if(username not in sender):
             sender[username] = {}
+            sender[username]['dates'] = {}
+            
             if('date_created' in data['actor']):
-                s = str(data['actor']['created_time'])
+                s = str(data['actor']['date_created'])
                 d = s.split("T")
                 sender[username]['joined'] = d[0]
-            sender[username]['dates'] = {}
-            if(month not in sender[username]['dates']):
-                sender[username]['dates'][month] = {col:0 for col in userfields}
-            sender[username]['dates'][month]['A'] = sender[username]['dates'][month]['A'] + 1
 
+        if(month not in sender[username]['dates']):
+            sender[username]['dates'][month] = {col:0 for col in userfields}
+        sender[username]['dates'][month]['A'] = sender[username]['dates'][month]['A'] + 1
 
         if(tusername not in receiver):
             receiver[tusername] = {}
+            receiver[tusername]['dates'] = {}
             if('date_created' in data['transactions'][0]['target']):
-                s = str(data['transactions'][0]['target']['created_time'])
+                s = str(data['transactions'][0]['target']['date_created'])
                 d = s.split("T")
                 receiver[tusername]['joined'] = d[0]
-            receiver[tusername]['dates'] = {}
-            if(month not in receiver[tusername]['dates']):
-                receiver[tusername]['dates'][month] = {col:0 for col in userfields}
-            receiver[tusername]['dates'][month]['A'] = receiver[tusername]['dates'][month]['A'] + 1
 
+        if(month not in receiver[tusername]['dates']):
+            receiver[tusername]['dates'][month] = {col:0 for col in userfields}
+        receiver[tusername]['dates'][month]['A'] = receiver[tusername]['dates'][month]['A'] + 1
+
+        
         if(len(tokens) > 50):
             continue
   
-
-
         if(date[0] not in date_personal_stat):
             date_personal_stat[date[0]] = {col:0 for col in personal_cols}
         per_flag = 0
@@ -286,21 +288,20 @@ for line in f:
                 date_personal_stat[date[0]]['A'] = 0
             date_personal_stat[date[0]]['A'] = date_personal_stat[date[0]]['A'] + 1
 
-
         if(contains_invoice(note)):
             per_flag = 1
             if('I' not in date_personal_stat[date[0]]):
                 date_personal_stat[date[0]]['I'] = 0
             date_personal_stat[date[0]]['I'] = date_personal_stat[date[0]]['I'] + 1
 
+        '''
         if(contains_address(note)):
             per_flag = 1
             if('L' not in date_personal_stat[date[0]]):
                 date_personal_stat[date[0]]['L'] = 0
             date_personal_stat[date[0]]['L'] = date_personal_stat[date[0]]['L'] + 1
 
-
-
+        '''
         note = ' '.join(tokens).strip()
         if(english_ch.search(note) == None or len(note) == 0):
             continue
@@ -319,18 +320,16 @@ for line in f:
                 flag = 1
                 break 
 
-
-        if(per_flag):
+        if(per_flag == 1):
             date_personal_stat[date[0]]['T'] = date_personal_stat[date]['T'] + 1
             if(month not in sender[username]['dates']):
                 sender[username]['dates'][month] = {col:0 for col in userfields}
             sender[username]['dates'][month]['P'] = sender[username]['dates'][month]['P'] + 1
-            sender[username]['dates'][month]]['T'] = sender[username]['dates'][month]['T'] + 1
+            sender[username]['dates'][month]['T'] = sender[username]['dates'][month]['T'] + 1
             if(month not in receiver[tusername]['dates']):
                 receiver[tusername]['dates'][month] = {col:0 for col in userfields}
             receiver[tusername]['dates'][month]['P'] = receiver[tusername]['dates'][month]['P'] + 1
             receiver[tusername]['dates'][month]['T'] = receiver[tusername]['dates'][month]['T'] + 1
-            
             
 
         if(flag == 0):
@@ -346,7 +345,6 @@ for line in f:
         myr[cnt] = month
         uname[cnt] = username
         tuname[cnt] = tusername
-        
         if cnt == (BATCH-1):
             # form dataset
             c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
@@ -411,8 +409,8 @@ for line in f:
 
 
                     elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
-                         date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
-                         sen_flag = 0
+                        date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
+                        sen_flag = 0
                         if(mon not in sender[un]['dates']):
                             sender[un]['dates'][mon] = {col:0 for col in userfields}
                         sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
@@ -539,6 +537,7 @@ for k,v in sender.items():
             for kk,vv in sender[k]['dates'].items():
                 s = s + str(kk) + "," +  str(sender[k]['dates'][kk]['S']) + "," + str(sender[k]['dates'][kk]['P']) + "," + str(sender[k]['dates'][kk]['T']) + "," + str(sender[k]['dates'][kk]['A']) + ";"
         
+        s = s + "|"
         if(k in receiver and 'dates' in receiver[k]):
             for kk,vv in receiver[k]['dates'].items():
                 s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
@@ -568,3 +567,9 @@ for k,v in receiver.items():
         if('dates' in receiver[k]):
             for kk,vv in receiver[k]['dates'].items():
                 s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
+
+        outputfile1.write(s + "\n")
+    except:
+        continue
+
+outputfile1.close()
