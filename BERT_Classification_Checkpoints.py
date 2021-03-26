@@ -10,6 +10,7 @@ import sys
 import json
 import nltk
 import pickle
+import os.path
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -23,6 +24,7 @@ MAX_LEN = 10
 BATCH = 50000
 TEST_BATCH = 32
 transactions = 0
+current = 0
 dates = [''] * BATCH
 notes = [''] * BATCH
 myr = [''] * BATCH
@@ -36,7 +38,8 @@ date_personal_stat = {}
 sender = {}
 receiver = {}
 
-CHECKPOINT_INTERVAL = 100000
+CHECKPOINT_INTERVAL = 50
+CHECKPOINT_FILE = "checkpoint/last_saved_line.txt"
 MODEL_FILE = 'BERT_MODEL/checkpoint_EPOCHS_6a'
 PATH_TO_KEYWORDS_LIST = 'data/UNIQ_KEYWORDS_LIST.txt'
 
@@ -56,6 +59,25 @@ if(len(sys.argv) != 3):
     sys.exit()
 
 f = open(sys.argv[1])
+
+if(os.path.exists(CHECKPOINT_FILE)):
+    with open(CHECKPOINT_FILE) as fp:
+        for l in fp:
+            current = int(l.strip())
+    print(current)
+    if(current > 0):
+        with open("checkpoint/datewise_transactions.txt", "rb") as myFile:
+            date_category_stat = pickle.load(myFile)
+        with open("checkpoint/date_personal_stat.txt", "rb") as myFile:
+            date_personal_stat = pickle.load(myFile)
+        with open("checkpoint/sender.txt", "rb") as myFile:
+            sender = pickle.load(myFile)
+        with open("checkpoint/receiver.txt", "rb") as myFile:
+            receiver = pickle.load(myFile)
+    print(date_category_stat)
+    print(date_personal_stat)
+    print(sender)
+    print(receiver)        
 
 #===============================================================#
 class BertClassifier(tf.keras.Model):    
@@ -213,12 +235,19 @@ for line in f:
     data = json.loads(line)
     transactions = transactions + 1
     try:
+        if(transactions < current):
+            continue
+        
         
         if(transactions%CHECKPOINT_INTERVAL == 0):
             with open("checkpoint/datewise_transactions.txt", "wb") as myFile:
                 pickle.dump(date_category_stat, myFile)
-        
-
+            with open("checkpoint/date_personal_stat.txt", "wb") as myFile:
+                pickle.dump(date_personal_stat, myFile)
+            with open("checkpoint/sender.txt", "wb") as myFile:
+                pickle.dump(sender, myFile)
+            with open("checkpoint/receiver.txt", "wb") as myFile:
+                pickle.dump(receiver, myFile)
 
         if(data is None or data['created_time'] is None):
             continue
