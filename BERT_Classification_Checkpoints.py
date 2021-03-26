@@ -55,7 +55,6 @@ if(len(sys.argv) != 3):
     sys.exit()
 
 f = open(sys.argv[1])
-#outputfile = open(sys.argv[2],"w")
 
 #===============================================================#
 class BertClassifier(tf.keras.Model):    
@@ -506,18 +505,57 @@ if cnt != 0:
 # Write stats
 df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=sens_cols)
 df_stat = df_stat.rename_axis('Date').reset_index()
-df_stat.to_csv(sys.argv[2] + ".output", index=False)
+df_stat.to_csv(sys.argv[2] + "sen.output", index=False)
 
 
 df_stat = pd.DataFrame.from_dict(date_personal_stat, orient='index', columns=personal_cols)
 df_stat = df_stat.rename_axis('Date').reset_index()
-df_stat.to_csv(sys.argv[2], index=False)
+df_stat.to_csv(sys.argv[2] + "per.output", index=False)
 
+outputfile = open(sys.argv[2],"w")
 
-'''
-outputfile.write("DATE #TEXTUAL_TRANSACTIONS \n")
-for k,v in sorted(transactions_date_wise.items()):
-    outputfile.write(str(k) + " " + str(v) + "\n")
+scnt=-1
+for k,v in sender.items():
+    if(v is None):
+        continue
+    scnt = scnt + 1
+    s = ""
+    try:
+        s = str(scnt) + "|"
+        if('joined' in sender[k]):
+            s = s + str(sender[username]['joined'])
+        s = s + "|"
+
+        if('dates' in sender[k]):
+            for kk,vv in sender[k]['dates'].items():
+                s = s + str(kk) + "," +  str(sender[k]['dates'][kk]['S']) + "," + str(sender[k]['dates'][kk]['P']) + "," + str(sender[k]['dates'][kk]['T']) + "," + str(sender[k]['dates'][kk]['A']) + ";"
+        
+        if(k in receiver and 'dates' in receiver[k]):
+            for kk,vv in receiver[k]['dates'].items():
+                s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
+    
+        
+        outputfile.write(s + "\n")
+    except:
+        continue
 
 outputfile.close()
-'''
+
+outputfile1 = open(sys.argv[2] + "recv.output","w")
+
+
+rcnt=-1
+for k,v in receiver.items():
+    if(v is None or k in sender):
+        continue
+    rcnt = rcnt + 1
+    s = ""
+    try:
+        s = str(rcnt) + "|"
+        if('joined' in receiver[k]):
+            s = s + str(receiver[username]['joined'])
+        s = s + "|"
+
+        if('dates' in receiver[k]):
+            for kk,vv in receiver[k]['dates'].items():
+                s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
