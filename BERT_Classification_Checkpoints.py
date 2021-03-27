@@ -266,7 +266,6 @@ for line in f:
 
         username = data['actor']['username']
         tusername = data['transactions'][0]['target']['username']
-        print(username,tusername,note)
         
         if(username not in sender):
             sender[username] = {}
