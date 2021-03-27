@@ -84,6 +84,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
             print("COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.")
             print("YOU NEED TO RECOMPUTE THINGS AGAIN.")
             print("PLEASE remove the file checkpoint/current.txt and re-run.")
+            sys.exit()
         else:
             print(" CHECKPOINT FILES AND DICTIONARIES LOADED SUCCESSFULLY!!!")
 
@@ -265,6 +266,7 @@ for line in f:
 
         username = data['actor']['username']
         tusername = data['transactions'][0]['target']['username']
+        print(username,tusername,note)
         
         if(username not in sender):
             sender[username] = {}
@@ -578,7 +580,7 @@ for k,v in sender.items():
     try:
         s = str(scnt) + "|"
         if('joined' in sender[k]):
-            s = s + str(sender[username]['joined'])
+            s = s + str(sender[k]['joined'])
         s = s + "|"
 
         if('dates' in sender[k]):
@@ -609,7 +611,7 @@ for k,v in receiver.items():
     try:
         s = str(rcnt) + "|"
         if('joined' in receiver[k]):
-            s = s + str(receiver[username]['joined'])
+            s = s + str(receiver[k]['joined'])
         s = s + "|"
 
         if('dates' in receiver[k]):
