@@ -23,8 +23,9 @@ from tensorflow.keras.layers import Dense, Flatten
 #===============================================================#
 MAX_LEN = 10
 BATCH = 10000
-CHECKPOINT_INTERVAL = 100000
+CHECKPOINT_INTERVAL = 2
 
+numbatch = 0
 transactions = 0
 current = 0
 dates = [''] * BATCH
@@ -79,6 +80,13 @@ if(os.path.exists(CHECKPOINT_FILE)):
             sender = pickle.load(myFile)
         with open("checkpoint/receiver.txt", "rb") as myFile:
             receiver = pickle.load(myFile)
+        if(len(date_category_stat) == 0 or len(date_category_stat) == 0 or len(sender) == 0 or len(receiver) == 0):
+            print("COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.")
+            print("YOU NEED TO RECOMPUTE THINGS AGAIN.")
+            print("PLEASE remove the file checkpoint/current.txt and re-run.")
+            sys.exit()
+        else:
+            print(" CHECKPOINT FILES AND DICTIONARIES LOADED SUCCESSFULLY!!!")
 
 #===============================================================#
 class BertClassifier(tf.keras.Model):    
@@ -240,20 +248,7 @@ for line in f:
         if(transactions < current):
             continue
         
-        print(transactions,CHECKPOINT_INTERVAL)
-        if(transactions%CHECKPOINT_INTERVAL == 0):
-            print(date_category_stat)
-
-            with open("checkpoint/current.txt", "wb") as myFile:
-                pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-            with open("checkpoint/date_category_stat.txt", "wb") as myFile:
-                pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-            with open("checkpoint/date_personal_stat.txt", "wb") as myFile:
-                pickle.dump(date_personal_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-            with open("checkpoint/sender.txt", "wb") as myFile:
-                pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-            with open("checkpoint/receiver.txt", "wb") as myFile:
-                pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+        #print(transactions,CHECKPOINT_INTERVAL)
 
         if(data is None or data['created_time'] is None):
             continue
@@ -284,6 +279,7 @@ for line in f:
         if(month not in sender[username]['dates']):
             sender[username]['dates'][month] = {col:0 for col in userfields}
         sender[username]['dates'][month]['A'] = sender[username]['dates'][month]['A'] + 1
+        #print(sender[username]['dates'][month]['A'])
 
         if(tusername not in receiver):
             receiver[tusername] = {}
@@ -382,6 +378,7 @@ for line in f:
         tuname[cnt] = tusername
         if cnt == (BATCH-1):
             current = transactions
+            numbatch = numbatch + 1
             # form dataset
             c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
             table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9)
@@ -457,7 +454,21 @@ for line in f:
                             receiver[tun]['dates'][mon] = {col:0 for col in userfields}
                         receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
                         receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
-                    
+
+
+            if(numbatch % CHECKPOINT_INTERVAL == 0):
+                with open("checkpoint/current.txt", "wb") as myFile:
+                    pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+                with open("checkpoint/date_category_stat.txt", "wb") as myFile:
+                    pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+                with open("checkpoint/date_personal_stat.txt", "wb") as myFile:
+                    pickle.dump(date_personal_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+                with open("checkpoint/sender.txt", "wb") as myFile:
+                    pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+                with open("checkpoint/receiver.txt", "wb") as myFile:
+                    pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+
+
             # reset counter
             cnt = -1
             
@@ -568,7 +579,7 @@ for k,v in sender.items():
     try:
         s = str(scnt) + "|"
         if('joined' in sender[k]):
-            s = s + str(sender[username]['joined'])
+            s = s + str(sender[k]['joined'])
         s = s + "|"
 
         if('dates' in sender[k]):
@@ -599,7 +610,7 @@ for k,v in receiver.items():
     try:
         s = str(rcnt) + "|"
         if('joined' in receiver[k]):
-            s = s + str(receiver[username]['joined'])
+            s = s + str(receiver[k]['joined'])
         s = s + "|"
 
         if('dates' in receiver[k]):
