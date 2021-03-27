@@ -247,7 +247,7 @@ for line in f:
         if(transactions < current):
             continue
         
-        print(transactions,CHECKPOINT_INTERVAL)
+        #print(transactions,CHECKPOINT_INTERVAL)
 
         if(data is None or data['created_time'] is None):
             continue
@@ -278,7 +278,7 @@ for line in f:
         if(month not in sender[username]['dates']):
             sender[username]['dates'][month] = {col:0 for col in userfields}
         sender[username]['dates'][month]['A'] = sender[username]['dates'][month]['A'] + 1
-        print(sender[username]['dates'][month]['A'])
+        #print(sender[username]['dates'][month]['A'])
 
         if(tusername not in receiver):
             receiver[tusername] = {}
