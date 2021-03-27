@@ -7,6 +7,7 @@
 #============================================================================================================#
 import re
 import sys
+import time
 import json
 import nltk
 import pickle
@@ -21,8 +22,9 @@ from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
 MAX_LEN = 10
-BATCH = 50000
-TEST_BATCH = 32
+BATCH = 50
+CHECKPOINT_INTERVAL = 32
+
 transactions = 0
 current = 0
 dates = [''] * BATCH
@@ -37,9 +39,8 @@ date_category_stat = {}  # number of each category for each day
 date_personal_stat = {}
 sender = {}
 receiver = {}
-
-CHECKPOINT_INTERVAL = 50
-CHECKPOINT_FILE = "checkpoint/last_saved_line.txt"
+TEST_BATCH = 32
+CHECKPOINT_FILE = "checkpoint/current.txt"
 MODEL_FILE = 'BERT_MODEL/checkpoint_EPOCHS_6a'
 PATH_TO_KEYWORDS_LIST = 'data/UNIQ_KEYWORDS_LIST.txt'
 
@@ -61,12 +62,16 @@ if(len(sys.argv) != 3):
 f = open(sys.argv[1])
 
 if(os.path.exists(CHECKPOINT_FILE)):
+    '''
     with open(CHECKPOINT_FILE) as fp:
         for l in fp:
             current = int(l.strip())
-    print(current)
+    '''
+    with open(CHECKPOINT_FILE, "rb") as myFile:
+        current = pickle.load(myFile)
+    print("RESUMING FROM " + str(current))
     if(current > 0):
-        with open("checkpoint/datewise_transactions.txt", "rb") as myFile:
+        with open("checkpoint/date_category_stat.txt", "rb") as myFile:
             date_category_stat = pickle.load(myFile)
         with open("checkpoint/date_personal_stat.txt", "rb") as myFile:
             date_personal_stat = pickle.load(myFile)
@@ -74,6 +79,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
             sender = pickle.load(myFile)
         with open("checkpoint/receiver.txt", "rb") as myFile:
             receiver = pickle.load(myFile)
+    print(" DATE CATEGORY STATS ")
     print(date_category_stat)
     print(date_personal_stat)
     print(sender)
@@ -114,6 +120,7 @@ tokenizer = BertTokenizer.from_pretrained(bert_model_name, do_lower_case=True)
 
 saved_model = BertClassifier(TFBertModel.from_pretrained(bert_model_name), len(label_cols))
 saved_model.load_weights(MODEL_FILE)
+time.sleep(5)
 print("\n MODEL LOADED\n\n\n\n\n")
 
 
@@ -238,16 +245,20 @@ for line in f:
         if(transactions < current):
             continue
         
-        
+        print(transactions,CHECKPOINT_INTERVAL)
         if(transactions%CHECKPOINT_INTERVAL == 0):
-            with open("checkpoint/datewise_transactions.txt", "wb") as myFile:
-                pickle.dump(date_category_stat, myFile)
+            print(date_category_stat)
+
+            with open("checkpoint/current.txt", "wb") as myFile:
+                pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+            with open("checkpoint/date_category_stat.txt", "wb") as myFile:
+                pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
             with open("checkpoint/date_personal_stat.txt", "wb") as myFile:
-                pickle.dump(date_personal_stat, myFile)
+                pickle.dump(date_personal_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
             with open("checkpoint/sender.txt", "wb") as myFile:
-                pickle.dump(sender, myFile)
+                pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
             with open("checkpoint/receiver.txt", "wb") as myFile:
-                pickle.dump(receiver, myFile)
+                pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
         if(data is None or data['created_time'] is None):
             continue
@@ -375,6 +386,7 @@ for line in f:
         uname[cnt] = username
         tuname[cnt] = tusername
         if cnt == (BATCH-1):
+            current = current + BATCH
             # form dataset
             c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
             table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9)
@@ -406,6 +418,8 @@ for line in f:
                 predictions = saved_model(token_ids, attention_mask=masks).numpy()
                 binary_predictions = np.where(predictions > 0.5, 1, 0)
                 test_preds.loc[start:end, label_cols] = binary_predictions
+            print(test_preds)
+            
 
             # update stats
             for index, row in test_preds.iterrows():
@@ -539,6 +553,8 @@ if cnt != 0:
 
     
 # Write stats
+
+#print(date_category_stat)
 df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=sens_cols)
 df_stat = df_stat.rename_axis('Date').reset_index()
 df_stat.to_csv(sys.argv[2] + "sen.output", index=False)
