@@ -4,7 +4,7 @@ import tensorflow as tf
 
 
 BATCH_SIZE = 32
-NR_EPOCHS = 6
+NR_EPOCHS = 4
 
 train_path = 'BERT_MODEL/Preprocessed_Final_Training_Set.csv'
 label_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
