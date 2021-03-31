@@ -22,8 +22,9 @@ from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
 MAX_LEN = 10
-BATCH = 10000
-CHECKPOINT_INTERVAL = 2
+BATCH = 50000
+CHECKPOINT_INTERVAL = 20
+INTERMEDIADTE = 10
 
 numbatch = 0
 transactions = 0
@@ -456,7 +457,8 @@ for line in f:
                         receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
 
 
-            if(numbatch % CHECKPOINT_INTERVAL == 0):
+            if(numbatch % CHECKPOINT_INTERVAL == 0 or INTERMEDIADTE%10 == 0):
+                INTERMEDIADTE = INTERMEDIADTE + 1
                 with open("checkpoint/current.txt", "wb") as myFile:
                     pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
                 with open("checkpoint/date_category_stat.txt", "wb") as myFile:
@@ -468,10 +470,69 @@ for line in f:
                 with open("checkpoint/receiver.txt", "wb") as myFile:
                     pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
+                df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=sens_cols)
+                df_stat = df_stat.rename_axis('Date').reset_index()
+                df_stat.to_csv(sys.argv[2] + "sen.output", index=False)
 
+
+                df_stat = pd.DataFrame.from_dict(date_personal_stat, orient='index', columns=personal_cols)
+                df_stat = df_stat.rename_axis('Date').reset_index()
+                df_stat.to_csv(sys.argv[2] + "per.output", index=False)
+                outputfile = open(sys.argv[2],"w")
+                outputfile.write("TRANSACTIONS PROCESSED TILL NOW = " + str(current) + "\n")
+                scnt=-1
+                for k,v in sender.items():
+                    if(v is None):
+                        continue
+                    scnt = scnt + 1
+                    s = ""
+                    try:
+                        s = str(scnt) + "|"
+                        if('joined' in sender[k]):
+                            s = s + str(sender[k]['joined'])
+                        s = s + "|"
+
+                        if('dates' in sender[k]):
+                            for kk,vv in sender[k]['dates'].items():
+                                s = s + str(kk) + "," +  str(sender[k]['dates'][kk]['S']) + "," + str(sender[k]['dates'][kk]['P']) + "," + str(sender[k]['dates'][kk]['T']) + "," + str(sender[k]['dates'][kk]['A']) + ";"
+
+                        s = s + "|"
+                        if(k in receiver and 'dates' in receiver[k]):
+                            for kk,vv in receiver[k]['dates'].items():
+                                s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
+
+
+                        outputfile.write(s + "\n")
+                    except:
+                        continue
+
+                outputfile.close()
+
+                outputfile1 = open(sys.argv[2] + "recv.output","w")
+                rcnt=-1
+                for k,v in receiver.items():
+                    if(v is None or k in sender):
+                        continue
+                    rcnt = rcnt + 1
+                    s = ""
+                    try:
+                        s = str(rcnt) + "|"
+                        if('joined' in receiver[k]):
+                            s = s + str(receiver[k]['joined'])
+                        s = s + "|"
+
+                        if('dates' in receiver[k]):
+                            for kk,vv in receiver[k]['dates'].items():
+                                s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
+
+                        outputfile1.write(s + "\n")
+                    except:
+                        continue
+       
+                outputfile1.close()
             # reset counter
             cnt = -1
-            
+                 
         cnt = cnt + 1
 
 
@@ -569,7 +630,7 @@ df_stat = df_stat.rename_axis('Date').reset_index()
 df_stat.to_csv(sys.argv[2] + "per.output", index=False)
 
 outputfile = open(sys.argv[2],"w")
-
+outputfile.write("TRANSACTIONS PROCESSED TILL NOW = " + str(current) + "\n")
 scnt=-1
 for k,v in sender.items():
     if(v is None):

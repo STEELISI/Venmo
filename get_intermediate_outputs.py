@@ -1,9 +1,9 @@
 #============================================================================================================#
 #*******************************   HOW TO RUN?  ************************************************************ #
-# python3 datewise_textual_transactions_count.py <path to the input json file>  <path to the output file>    #
+# python3 get_intermediate_outputs.py <path to the output file>                                              #
 #*********************************************************************************************************** #
 # Example:                                                                                                   #
-# python3 BERT_Classification_Checkpoints.py /Users/rajattan/venmo/dummy.json ./transactions_date_wise.txt   #
+# python3 get_intermediate_outputs.py intermediate_output                                                    #
 #============================================================================================================#
 import sys
 import time
