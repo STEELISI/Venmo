@@ -80,7 +80,7 @@ for k,v in sender.items():
     scnt = scnt + 1
     s = ""
     try:
-        s = str(k) + "|"
+        s = str(scnt) + "|"
         if('joined' in sender[k]):
             s = s + str(sender[k]['joined'])
         s = s + "|"
@@ -111,7 +111,7 @@ for k,v in receiver.items():
     rcnt = rcnt + 1
     s = ""
     try:
-        s = str(k) + "|"
+        s = str(rcnt) + "|"
         if('joined' in receiver[k]):
             s = s + str(receiver[k]['joined'])
         s = s + "|"
