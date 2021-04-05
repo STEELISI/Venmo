@@ -1,6 +1,6 @@
 #============================================================================================================#
 #*******************************   HOW TO RUN?  ************************************************************ #
-# python3 datewise_textual_transactions_count.py <path to the input json file>  <path to the output file>    #
+# python3 BERT_Classification_Checkpoints.py <path to the input json file>  <path to the output file>    #
 #*********************************************************************************************************** #
 # Example:                                                                                                   #
 # python3 BERT_Classification_Checkpoints.py /Users/rajattan/venmo/dummy.json ./transactions_date_wise.txt   #
@@ -259,7 +259,7 @@ for line in f:
         if(data is None or data['message'] is None or data['message'] == ""):
             continue
         note = str(data['message'])
-        tokens = nltk.word_tokenize(note)
+        #tokens = nltk.word_tokenize(note)
         tokens = preprocessing(note)
 
         if('actor' not in data or 'username' not in data['actor'] or 'transactions' not in data or data['transactions'] is None  or 'target' not in data['transactions'][0] or 'username' not in data['transactions'][0]['target']):
