@@ -296,7 +296,7 @@ for line in f:
         receiver[tusername]['dates'][month]['A'] = receiver[tusername]['dates'][month]['A'] + 1
 
         
-        if(len(tokens) > 50):
+        if(len(tokens) > 30):
             continue
   
         if(date[0] not in date_personal_stat):
@@ -338,7 +338,7 @@ for line in f:
         note = ' '.join(tokens).strip()
         #if(english_ch.search(note) == None or len(note) == 0):
         #    continue
-        if(detect(note) == "en" or len(note) == 0):
+        if((english_ch.search(note) and detect(note) == "en") or len(note) == 0):
             continue
 
         bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
