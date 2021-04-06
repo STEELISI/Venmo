@@ -296,7 +296,7 @@ for line in f:
         receiver[tusername]['dates'][month]['A'] = receiver[tusername]['dates'][month]['A'] + 1
 
         
-        if(len(tokens) > 50):
+        if(len(tokens) > 30):
             continue
   
         if(date[0] not in date_personal_stat):
