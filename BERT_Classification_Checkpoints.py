@@ -338,7 +338,7 @@ for line in f:
         note = ' '.join(tokens).strip()
         #if(english_ch.search(note) == None or len(note) == 0):
         #    continue
-        if((english_ch.search(note) and detect(note) == "en") or len(note) == 0):
+        if( english_ch.search(note) == None or (not(detect(note) == "en")) or len(note) == 0):
             continue
 
         bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
