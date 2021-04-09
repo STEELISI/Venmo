@@ -252,22 +252,26 @@ for line in f:
         
         #print(transactions,CHECKPOINT_INTERVAL)
 
+        ### Checks for Invalid JSONs ###
         if(data is None or data['created_time'] is None):
             continue
-        datetim = str(data['created_time'])
-        date = datetim.split("T")
-        month = date[0][2:7]
         if(data is None or data['message'] is None or data['message'] == ""):
             continue
-        note = str(data['message'])
-        #tokens = nltk.word_tokenize(note)
-        tokens = preprocessing(note)
-
         if('actor' not in data or 'username' not in data['actor'] or 'transactions' not in data or data['transactions'] is None  or 'target' not in data['transactions'][0] or 'username' not in data['transactions'][0]['target']):
             continue
 
         username = data['actor']['username']
         tusername = data['transactions'][0]['target']['username']
+
+        datetim = str(data['created_time'])
+        date = datetim.split("T")
+        month = date[0][2:7]
+
+        note = str(data['message'])
+        #tokens = nltk.word_tokenize(note)
+        tokens = preprocessing(note)
+
+
         
         if(username not in sender):
             sender[username] = {}
