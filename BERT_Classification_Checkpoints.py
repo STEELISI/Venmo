@@ -51,7 +51,7 @@ possible_personal = re.compile("\d")
 english_ch = re.compile("[A-Za-z0-9]+")
 email = re.compile("[^@]+@[^@]+\.[^@]+")
 invc = re.compile("(((invoice|invc)(|s)|tracking)( \d|#|:| #| (\w)+\d))")
-acnt = re.compile("( id \d)|(password|passwd|paswd|pswd|pswrd|pwd)(:| is)|username:|username(|s) |id:")
+acnt = re.compile("( id \d)|(password|passwd|paswd|pswd|pswrd|pwd|code)(:| is)|username:|username(|s) |id:")
 phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
 add = re.compile("\d+[ ](?:[A-Za-z0-9.-]+[ ]?)+(?:Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St)\.?")
 adr = re.compile("( (Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St|Way)(,|.| ))|( (AL|AK|AS|AZ|AR|CA|CO|CT|DE|DC|FM|FL|GA|GU|HI|ID|IL|IN|IA|KS|KY|LA|ME|MH|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|MP|OH|OK|OR|PW|PA|PR|RI|SC|SD|TN|TX|UT|VT|VI|VA|WA|WV|WI|WY) \b\d{5}(?:-\d{4})?\b)")
@@ -329,12 +329,6 @@ for line in f:
                     date_personal_stat[date[0]]['E'] = 0
                 date_personal_stat[date[0]]['E'] = date_personal_stat[date[0]]['E'] + 1
 
-            if(contains_acc(note)):
-                per_flag = 1
-                if('A' not in date_personal_stat[date[0]]):
-                    date_personal_stat[date[0]]['A'] = 0
-                date_personal_stat[date[0]]['A'] = date_personal_stat[date[0]]['A'] + 1
-
             if(contains_invoice(note)):
                 per_flag = 1
                 if('I' not in date_personal_stat[date[0]]):
@@ -347,23 +341,21 @@ for line in f:
                 if('L' not in date_personal_stat[date[0]]):
                     date_personal_stat[date[0]]['L'] = 0
                 date_personal_stat[date[0]]['L'] = date_personal_stat[date[0]]['L'] + 1
+
+        if(contains_acc(note)):
+            per_flag = 1
+            if('A' not in date_personal_stat[date[0]]):
+                date_personal_stat[date[0]]['A'] = 0
+            date_personal_stat[date[0]]['A'] = date_personal_stat[date[0]]['A'] + 1
+
             
         note = ' '.join(tokens).strip()
-        #if(english_ch.search(note) == None or len(note) == 0):
-        #    continue
+
         if(len(note) == 0 or  english_ch.search(note) == None or (not(detect(note) == "en"))):
             continue
 
-        #bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
         flag = 0
         for t in tokens:
-            if(t == "id" or t == "code"):
-                per_flag = 1
-                if('A' not in date_personal_stat[date[0]]):
-                    date_personal_stat[date[0]]['A'] = 0
-                date_personal_stat[date[0]]['A'] = date_personal_stat[date[0]]['A'] + 1
-         
-
             if(t in keywords):
                 flag = 1
                 break 
@@ -380,7 +372,7 @@ for line in f:
             receiver[tusername]['dates'][month]['T'] = receiver[tusername]['dates'][month]['T'] + 1
             
 
-        if(flag == 0):
+        if(flag == 0 and len(tokens) > 1):
             bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
             for bi in bigrams:
                 if(bi in keywords):
