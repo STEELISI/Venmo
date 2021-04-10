@@ -47,8 +47,11 @@ CHECKPOINT_FILE = "checkpoint/current.txt"
 MODEL_FILE = 'BERT_MODEL/checkpoint_EPOCHS_6a'
 PATH_TO_KEYWORDS_LIST = 'data/UNIQ_KEYWORDS_LIST.txt'
 
+possible_personal = re.compile("\d")
 english_ch = re.compile("[A-Za-z0-9]+")
 email = re.compile("[^@]+@[^@]+\.[^@]+")
+invc = re.compile("(((invoice|invc)(|s)|tracking)( \d|#|:| #| (\w)+\d))")
+acnt = re.compile("( id \d)|(password|passwd|paswd|pswd|pswrd|pwd)(:| is)|username:|username(|s) |id:")
 phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
 add = re.compile("\d+[ ](?:[A-Za-z0-9.-]+[ ]?)+(?:Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St)\.?")
 
@@ -187,7 +190,7 @@ def contains_address(note):
 Account Details
 """
 def contains_acc(note):
-    if("password" in note or "passwd" in note or "user id" in note or "userid" in note or "username" in note):
+    if(acnt.search(note)):
         return True
     return False
 #===============================================================#
@@ -195,16 +198,16 @@ def contains_acc(note):
 Invoice Details
 """
 def contains_invoice(note):
-    if("invoice" in note or "tracking" in note):
+    if(invc.search(note)):
         return True
     return False
 #===============================================================#
 """
 Preprocessing Work 
 """
-def preprocessing(note):
-    tokens = nltk.word_tokenize(note)
-    tokens = convert_letters(tokens)
+def preprocessing(origtokens):
+    #tokens = nltk.word_tokenize(note)
+    tokens = convert_letters(origtokens)
     tokens = reduce_lengthening(tokens)
     tokens = remove_special(tokens)
     tokens = remove_blanc(tokens)
@@ -252,22 +255,28 @@ for line in f:
         
         #print(transactions,CHECKPOINT_INTERVAL)
 
+        #==============================#
+        ### Checks for Invalid JSONs ###
+        #==============================#
         if(data is None or data['created_time'] is None):
             continue
-        datetim = str(data['created_time'])
-        date = datetim.split("T")
-        month = date[0][2:7]
-        if(data is None or data['message'] is None or data['message'] == ""):
+        if(data['message'] is None or data['message'] == ""):
             continue
-        note = str(data['message'])
-        #tokens = nltk.word_tokenize(note)
-        tokens = preprocessing(note)
-
         if('actor' not in data or 'username' not in data['actor'] or 'transactions' not in data or data['transactions'] is None  or 'target' not in data['transactions'][0] or 'username' not in data['transactions'][0]['target']):
             continue
 
         username = data['actor']['username']
         tusername = data['transactions'][0]['target']['username']
+
+        datetim = str(data['created_time'])
+        date = datetim.split("T")
+        month = date[0][2:7]
+
+        note = str(data['message'])
+        origtokens = nltk.word_tokenize(note)
+        tokens = preprocessing(origtokens)
+
+
         
         if(username not in sender):
             sender[username] = {}
@@ -296,52 +305,55 @@ for line in f:
         receiver[tusername]['dates'][month]['A'] = receiver[tusername]['dates'][month]['A'] + 1
 
         
-        if(len(tokens) > 30):
+        if(len(origtokens) > 30):
             continue
-  
+ 
+        
         if(date[0] not in date_personal_stat):
             date_personal_stat[date[0]] = {col:0 for col in personal_cols}
         per_flag = 0
 
-        if(contains_phn(note)):
-            per_flag = 1
-            if('P' not in date_personal_stat[date[0]]):
-                date_personal_stat[date[0]]['P'] = 0
-            date_personal_stat[date[0]]['P'] = date_personal_stat[date[0]]['P'] + 1
 
-        if(contains_email(note)):
-            per_flag = 1
-            if('E' not in date_personal_stat[date[0]]):
-                date_personal_stat[date[0]]['E'] = 0
-            date_personal_stat[date[0]]['E'] = date_personal_stat[date[0]]['E'] + 1
+        if(possible_personal.search(note) or "@" in note):
+            note = note.lower()
+            if(contains_phn(note)):
+                per_flag = 1
+                if('P' not in date_personal_stat[date[0]]):
+                    date_personal_stat[date[0]]['P'] = 0
+                date_personal_stat[date[0]]['P'] = date_personal_stat[date[0]]['P'] + 1
 
-        if(contains_acc(note)):
-            per_flag = 1
-            if('A' not in date_personal_stat[date[0]]):
-                date_personal_stat[date[0]]['A'] = 0
-            date_personal_stat[date[0]]['A'] = date_personal_stat[date[0]]['A'] + 1
+            if(contains_email(note)):
+                per_flag = 1
+                if('E' not in date_personal_stat[date[0]]):
+                    date_personal_stat[date[0]]['E'] = 0
+                date_personal_stat[date[0]]['E'] = date_personal_stat[date[0]]['E'] + 1
 
-        if(contains_invoice(note)):
-            per_flag = 1
-            if('I' not in date_personal_stat[date[0]]):
-                date_personal_stat[date[0]]['I'] = 0
-            date_personal_stat[date[0]]['I'] = date_personal_stat[date[0]]['I'] + 1
+            if(contains_acc(note)):
+                per_flag = 1
+                if('A' not in date_personal_stat[date[0]]):
+                    date_personal_stat[date[0]]['A'] = 0
+                date_personal_stat[date[0]]['A'] = date_personal_stat[date[0]]['A'] + 1
 
-        '''
-        if(contains_address(note)):
-            per_flag = 1
-            if('L' not in date_personal_stat[date[0]]):
-                date_personal_stat[date[0]]['L'] = 0
-            date_personal_stat[date[0]]['L'] = date_personal_stat[date[0]]['L'] + 1
+            if(contains_invoice(note)):
+                per_flag = 1
+                if('I' not in date_personal_stat[date[0]]):
+                    date_personal_stat[date[0]]['I'] = 0
+                date_personal_stat[date[0]]['I'] = date_personal_stat[date[0]]['I'] + 1
 
-        '''
+            '''
+            if(contains_address(note)):
+                per_flag = 1
+                if('L' not in date_personal_stat[date[0]]):
+                    date_personal_stat[date[0]]['L'] = 0
+                date_personal_stat[date[0]]['L'] = date_personal_stat[date[0]]['L'] + 1
+            '''
         note = ' '.join(tokens).strip()
         #if(english_ch.search(note) == None or len(note) == 0):
         #    continue
         if(len(note) == 0 or  english_ch.search(note) == None or (not(detect(note) == "en"))):
             continue
 
-        bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
+        #bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
         flag = 0
         for t in tokens:
             if(t == "id" or t == "code"):
@@ -368,6 +380,7 @@ for line in f:
             
 
         if(flag == 0):
+            bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
             for bi in bigrams:
                 if(bi in keywords):
                     flag = 1
