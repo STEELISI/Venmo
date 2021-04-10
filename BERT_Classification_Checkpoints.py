@@ -54,6 +54,7 @@ invc = re.compile("(((invoice|invc)(|s)|tracking)( \d|#|:| #| (\w)+\d))")
 acnt = re.compile("( id \d)|(password|passwd|paswd|pswd|pswrd|pwd)(:| is)|username:|username(|s) |id:")
 phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
 add = re.compile("\d+[ ](?:[A-Za-z0-9.-]+[ ]?)+(?:Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St)\.?")
+adr = re.compile("( (Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St|Way)(,|.| ))|( (AL|AK|AS|AZ|AR|CA|CO|CT|DE|DC|FM|FL|GA|GU|HI|ID|IL|IN|IA|KS|KY|LA|ME|MH|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|MP|OH|OK|OR|PW|PA|PR|RI|SC|SD|TN|TX|UT|VT|VI|VA|WA|WV|WI|WY) \b\d{5}(?:-\d{4})?\b)")
 
 #===============================================================#
 
@@ -182,7 +183,7 @@ def contains_email(note):
 Contains address
 """
 def contains_address(note):
-    if(add.search(note)):
+    if(adr.search(note)):
         return True
     return False
 #===============================================================#
@@ -340,13 +341,13 @@ for line in f:
                     date_personal_stat[date[0]]['I'] = 0
                 date_personal_stat[date[0]]['I'] = date_personal_stat[date[0]]['I'] + 1
 
-            '''
+            
             if(contains_address(note)):
                 per_flag = 1
                 if('L' not in date_personal_stat[date[0]]):
                     date_personal_stat[date[0]]['L'] = 0
                 date_personal_stat[date[0]]['L'] = date_personal_stat[date[0]]['L'] + 1
-            '''
+            
         note = ' '.join(tokens).strip()
         #if(english_ch.search(note) == None or len(note) == 0):
         #    continue
