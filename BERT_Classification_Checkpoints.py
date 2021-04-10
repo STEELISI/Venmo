@@ -255,7 +255,7 @@ for line in f:
         ### Checks for Invalid JSONs ###
         if(data is None or data['created_time'] is None):
             continue
-        if(data is None or data['message'] is None or data['message'] == ""):
+        if(data['message'] is None or data['message'] == ""):
             continue
         if('actor' not in data or 'username' not in data['actor'] or 'transactions' not in data or data['transactions'] is None  or 'target' not in data['transactions'][0] or 'username' not in data['transactions'][0]['target']):
             continue
