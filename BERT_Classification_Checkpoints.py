@@ -24,31 +24,38 @@ from tensorflow.keras.layers import Dense, Flatten
 #===============================================================#
 MAX_LEN = 10
 BATCH = 50000
-CHECKPOINT_INTERVAL = 20
 INTERMEDIADTE = 10
+CHECKPOINT_INTERVAL = 20
 
+#===============================================================#
+current = 0
 numbatch = 0
 transactions = 0
-current = 0
+myr = [''] * BATCH
 dates = [''] * BATCH
 notes = [''] * BATCH
-myr = [''] * BATCH
 uname = [''] * BATCH
 tuname = [''] * BATCH
-
-cnt = 0 # counter
-keywords = set()
-date_category_stat = {}  # number of each category for each day
-date_personal_stat = {}
+#===============================================================#
+cnt = 0
 sender = {}
 receiver = {}
+keywords = set()
 stopwords = set()
+date_category_stat = {}
+date_personal_stat = {}
 
+#===============================================================#
 TEST_BATCH = 32
+SENDER_FILE = "checkpoint/sender.txt"
+RECEIVER_FILE = "checkpoint/receiver.txt"
 CHECKPOINT_FILE = "checkpoint/current.txt"
-MODEL_FILE = 'BERT_MODEL/checkpoint_EPOCHS_6a'
-PATH_TO_KEYWORDS_LIST = 'data/UNIQ_KEYWORDS_LIST.txt'
-PATH_TO_STOPWORDS_LIST = 'data/STOPWORDS.txt'
+PATH_TO_STOPWORDS_LIST = "data/STOPWORDS.txt"
+MODEL_FILE = "BERT_MODEL/checkpoint_EPOCHS_6a"
+DATECAT_FILE = "checkpoint/date_category_stat.txt"
+DATEPER_FILE = "checkpoint/date_personal_stat.txt"
+PATH_TO_KEYWORDS_LIST = "data/UNIQ_KEYWORDS_LIST.txt"
+#===============================================================#
 
 pattern = re.compile(r"(.)\1{2,}")
 pattern_rm1 = re.compile(r"(.)\1{1,}")
@@ -56,10 +63,9 @@ possible_personal = re.compile("\d")
 english_ch = re.compile("[A-Za-z0-9]+")
 email = re.compile("[^@]+@[^@]+\.[^@]+")
 invc = re.compile("(((invoice|invc)(|s)|tracking)( \d|#|:| #| (\w)+\d))")
-acnt = re.compile("( id \d)|(password|passwd|paswd|pswd|pswrd|pwd|code)(:| is)|username:|(username|user name)(|s) |id:")
-#acnt = re.compile("( id \d)|(password|passwd|paswd|pswd|pswrd|pwd|code)(:| is)|username:|username(|s) |id:")
 phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
-add = re.compile("\d+[ ](?:[A-Za-z0-9.-]+[ ]?)+(?:Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St)\.?")
+acnt = re.compile("( id \d)|(password|passwd|paswd|pswd|pswrd|pwd|code)(:| is)|username:|(username|user name)(|s) |id:")
+#street = re.compile("\d+[ ](?:[A-Za-z0-9.-]+[ ]?)+(?:Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St)\.?")
 adr = re.compile("( (Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St|Way)(,|.| ))|( (AL|AK|AS|AZ|AR|CA|CO|CT|DE|DC|FM|FL|GA|GU|HI|ID|IL|IN|IA|KS|KY|LA|ME|MH|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|MP|OH|OK|OR|PW|PA|PR|RI|SC|SD|TN|TX|UT|VT|VI|VA|WA|WV|WI|WY) \b\d{5}(?:-\d{4})?\b)")
 
 #===============================================================#
@@ -75,30 +81,41 @@ if(len(sys.argv) != 3):
 f = open(sys.argv[1])
 
 if(os.path.exists(CHECKPOINT_FILE)):
-    '''
-    with open(CHECKPOINT_FILE) as fp:
-        for l in fp:
-            current = int(l.strip())
-    '''
     with open(CHECKPOINT_FILE, "rb") as myFile:
         current = pickle.load(myFile)
     print("RESUMING FROM " + str(current))
     if(current > 0):
-        with open("checkpoint/date_category_stat.txt", "rb") as myFile:
+        datecat = DATECAT_FILE
+        with open(datecat, "rb") as myFile:
             date_category_stat = pickle.load(myFile)
-        with open("checkpoint/date_personal_stat.txt", "rb") as myFile:
+
+        dateper = DATEPER_FILE
+        with open(dateper, "rb") as myFile:
             date_personal_stat = pickle.load(myFile)
-        with open("checkpoint/sender.txt", "rb") as myFile:
+
+        send = SENDER_FILE + "." + str(current)
+        if(not(os.path.exists(send))):
+            send = SENDER_FILE
+        with open(send, "rb") as myFile:
             sender = pickle.load(myFile)
-        with open("checkpoint/receiver.txt", "rb") as myFile:
+
+        recv = RECEIVER_FILE + "." + str(current)
+        if(not(os.path.exists(recv))):
+            recv = RECEIVER_FILE
+        with open(recv, "rb") as myFile:
             receiver = pickle.load(myFile)
+
         if(len(date_category_stat) == 0 or len(date_category_stat) == 0 or len(sender) == 0 or len(receiver) == 0):
-            print("COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.")
-            print("YOU NEED TO RECOMPUTE THINGS AGAIN.")
-            print("PLEASE remove the file checkpoint/current.txt and re-run.")
+            print("===================================================================")
+            print("****** COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.******")
+            print("***                YOU NEED TO RECOMPUTE THINGS AGAIN.          ***")
+            print("***    PLEASE remove the file checkpoint/current.txt and re-run.***")
+            print("===================================================================")
             sys.exit()
         else:
+            print("=========================================================")
             print(" CHECKPOINT FILES AND DICTIONARIES LOADED SUCCESSFULLY!!!")
+            print("=========================================================")
 
 #===============================================================#
 class BertClassifier(tf.keras.Model):    
@@ -245,16 +262,6 @@ def preprocessing_cntd(tokens):
     tokens = [t for t in tokens if len(t) != 0]
     return tokens
 #===============================================================#
-"""
-Build dataset
-"""
-'''
-def create_dataset(data_tuple, epochs=1, batch_size=32):
-    dataset = tf.data.Dataset.from_tensor_slices(data_tuple)
-    dataset = dataset.repeat(epochs)
-    dataset = dataset.batch(batch_size)
-    return dataset
-'''
 
 def create_dataset(data_tuple, epochs=1, batch_size=32, buffer_size=100, train=False):
     dataset = tf.data.Dataset.from_tensor_slices(data_tuple)
@@ -346,7 +353,7 @@ for line in f:
         per_flag = 0
 
 
-        if(possible_personal.search(note) or "@" in note):
+        if(possible_personal.search(note) or "@" in note or "#" in note):
             note = note.lower()
             if(contains_phn(note)):
                 per_flag = 1
@@ -505,6 +512,7 @@ for line in f:
 
             if(numbatch % CHECKPOINT_INTERVAL == 0 or INTERMEDIADTE%10 == 0):
                 INTERMEDIADTE = INTERMEDIADTE + 1
+                '''
                 with open("checkpoint/current.txt", "wb") as myFile:
                     pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
                 with open("checkpoint/date_category_stat.txt", "wb") as myFile:
@@ -514,6 +522,23 @@ for line in f:
                 with open("checkpoint/sender.txt", "wb") as myFile:
                     pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
                 with open("checkpoint/receiver.txt", "wb") as myFile:
+                    pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+                '''
+
+                strcurrent = "." + str(current)
+                datecat = DATECAT_FILE
+                dateper  = DATEPER_FILE
+                with open(CHECKPOINT_FILE, "wb") as myFile:
+                    pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+                with open(datecat, "wb") as myFile:
+                    pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+                with open(dateper, "wb") as myFile:
+                    pickle.dump(date_personal_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+                send = SENDER_FILE + strcurrent
+                with open(send, "wb") as myFile:
+                    pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+                recv = RECEIVER_FILE + strcurrent
+                with open(recv, "wb") as myFile:
                     pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
                 df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=sens_cols)
