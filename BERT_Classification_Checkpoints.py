@@ -42,11 +42,16 @@ date_category_stat = {}  # number of each category for each day
 date_personal_stat = {}
 sender = {}
 receiver = {}
+stopwords = set()
+
 TEST_BATCH = 32
 CHECKPOINT_FILE = "checkpoint/current.txt"
 MODEL_FILE = 'BERT_MODEL/checkpoint_EPOCHS_6a'
 PATH_TO_KEYWORDS_LIST = 'data/UNIQ_KEYWORDS_LIST.txt'
+PATH_TO_STOPWORDS_LIST = 'data/STOPWORDS.txt'
 
+pattern = re.compile(r"(.)\1{2,}")
+pattern_rm1 = re.compile(r"(.)\1{1,}")
 possible_personal = re.compile("\d")
 english_ch = re.compile("[A-Za-z0-9]+")
 email = re.compile("[^@]+@[^@]+\.[^@]+")
@@ -113,6 +118,13 @@ class BertClassifier(tf.keras.Model):
                 
         return cls_output
 
+
+#===============================================================#
+with open(PATH_TO_STOPWORDS_LIST,'r') as fp:
+    for l in fp:
+        stopwords.add(l.strip())
+
+
 #===============================================================#
 c0 = c1 = [' '] * BATCH
 c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * BATCH
@@ -148,8 +160,13 @@ def convert_letters(tokens, style = "lower"):
 Eliminate all continuous duplicate characters more than twice
 """
 def reduce_lengthening(tokens):
-    pattern = re.compile(r"(.)\1{2,}")
     return [pattern.sub(r"\1\1", token) for token in tokens]
+#===============================================================#
+"""
+Eliminate all continuous duplicate characters more than once
+"""
+def reduce_lengthening_rm1(tokens):
+    return [pattern_rm1.sub(r"\1", token) for token in tokens]
 #===============================================================#
 """
 Remove all digits and special characters
@@ -204,12 +221,24 @@ def contains_invoice(note):
     return False
 #===============================================================#
 """
+Stopwords Removal
+"""
+def remove_stopwords(tokens):
+    return [token for token in tokens if token not in stopwords]
+#===============================================================#
+"""
 Preprocessing Work 
 """
 def preprocessing(origtokens):
-    #tokens = nltk.word_tokenize(note)
     tokens = convert_letters(origtokens)
     tokens = reduce_lengthening(tokens)
+    return tokens
+#===============================================================#
+"""
+More Preprocessing Work 
+"""
+def preprocessing_cntd(tokens):
+    tokens = remove_stopwords(tokens)
     tokens = remove_special(tokens)
     tokens = remove_blanc(tokens)
     tokens = [t for t in tokens if len(t) != 0]
@@ -275,7 +304,8 @@ for line in f:
 
         note = str(data['message'])
         origtokens = nltk.word_tokenize(note)
-        tokens = preprocessing(origtokens)
+        tokens_partial = preprocessing(origtokens)
+        tokens = preprocessing_cntd(tokens_partial)
 
 
         
@@ -378,6 +408,12 @@ for line in f:
                 if(bi in keywords):
                     flag = 1
                     break
+            tokens_partial = reduce_lengthening_rm1(tokens_partial)
+            for t in tokens_partial:
+                if(t in keywords):
+                    flag = 1
+                    break
+
         if(flag == 0):
             continue
 
