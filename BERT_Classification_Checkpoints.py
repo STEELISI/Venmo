@@ -25,7 +25,7 @@ from tensorflow.keras.layers import Dense, Flatten
 MAX_LEN = 10
 BATCH = 50000
 INTERMEDIADTE = 10
-CHECKPOINT_INTERVAL = 20
+CHECKPOINT_INTERVAL = 10
 
 #===============================================================#
 current = 0
@@ -601,6 +601,9 @@ for line in f:
                         continue
        
                 outputfile1.close()
+                sender.clear()
+                receiver.clear()
+
             # reset counter
             cnt = -1
                  
