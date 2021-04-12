@@ -144,8 +144,7 @@ with open(PATH_TO_STOPWORDS_LIST,'r') as fp:
 
 
 #===============================================================#
-c0 = c1 = [' '] * BATCH
-c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * BATCH
+#c0 = c1 = [' '] * BATCH
 cols_name = ['Date', 'Note','myr','uname','tuname','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 label_cols = cols_name[5:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
 sens_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','T']
@@ -162,7 +161,7 @@ saved_model.load_weights(MODEL_FILE)
 time.sleep(5)
 print("\n MODEL LOADED\n\n\n\n\n")
 
-
+c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * (BATCH - 1)
 #===============================================================#
 
 """
@@ -433,8 +432,7 @@ for line in f:
         if cnt == (BATCH-1):
             current = transactions
             numbatch = numbatch + 1
-            # form dataset
-            c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
+            cnt = -1
             table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9)
             table = list(table)
             table = [list(r) for r in table]
@@ -601,8 +599,11 @@ for line in f:
                         continue
        
                 outputfile1.close()
+                sender.clear()
+                receiver.clear()
+
             # reset counter
-            cnt = -1
+            #cnt = -1
                  
         cnt = cnt + 1
 
