@@ -13,6 +13,7 @@ import json
 import nltk
 import pickle
 import os.path
+import datetime
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -24,10 +25,10 @@ from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
 MAX_LEN = 10
-BATCH = 2000
+BATCH = 50000
 INTERMEDIADTE = 10
 CHECKPOINT_INTERVAL = 20
-CHUNKSIZE = 200
+CHUNKSIZE = 1000
 
 #===============================================================#
 current = 0
@@ -81,7 +82,7 @@ if(len(sys.argv) != 3):
     sys.exit()
 
 #f = open(sys.argv[1])
-
+print(sys.argv[1])
 if(os.path.exists(CHECKPOINT_FILE)):
     with open(CHECKPOINT_FILE, "rb") as myFile:
         current = pickle.load(myFile)
@@ -285,26 +286,29 @@ with open(PATH_TO_KEYWORDS_LIST,'r') as fp:
 #   MAIN FLOW                                                   #
 #===============================================================#
 
-#  1,           2,       ,   3      ,     4     ,      5         ,   6             ,      7        ,       8
-#"message","created_time","actor_id","target_id","actor_username","target_username","actor_created","target_created"
-#"i1dummy message",1618035048,11111111,99999,"John-Smith-2","janedoe",1618035048,1618035048
-#"dussmmy,tht ,refrf ,r message",1618035048,11111111,99999,"John-Smith-2","janedoe",1618035048,1618035048
+#====================================================================================================================#
+#************************************************   FORMAT EXPECTED    **********************************************#
+#  1,           2,       ,   3      ,     4     ,      5         ,   6             ,      7        ,       8         #
+#"message","created_time","actor_id","target_id","actor_username","target_username","actor_created","target_created" #
+#"d dummy message",1618035048,11111111,99999,"John-Smith-2","janedoe",1618035048,1618035048                          #
+#"dussmmy,tht ,refrf ,r message",1618035048,11111111,99999,"John-Smith-2","janedoe",1618035048,1618035048            #
+#====================================================================================================================#
 
-for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE):
+
+for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False):
     for row in chunk.itertuples():
         transactions = transactions + 1
         try:
-            if(transactions < current or len(row) < 9):
+            if(transactions < current or len(row) != 9):
                 continue
             username = row[5]
             tusername = row[6]
 
-            timestamp = str(row[2])
-            your_dt = datetime.datetime.fromtimestamp(int(timestamp))
-            day = your_dt.strftime("%Y-%m-%dT%H:%M:%S")
+            timestampp = str(row[2])
+            your_dt = datetime.datetime.fromtimestamp(int(timestampp))
+            day = your_dt.strftime("%Y-%m-%dT")
             date = day.split("T")
             month = date[0][2:7]
-
             note = row[1]
             origtokens = nltk.word_tokenize(note)
             tokens_partial = preprocessing(origtokens)
@@ -317,7 +321,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE):
                 sender[username]['dates'] = {}
                 t = str(row[7])
                 s = datetime.datetime.fromtimestamp(int(t))
-                da = s.strftime("%Y-%m-%dT%H:%M:%S")
+                da = s.strftime("%Y-%m-%dT")
                 d = da.split("T")
                 sender[username]['joined'] = d[0]
 
@@ -330,7 +334,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE):
                 receiver[tusername]['dates'] = {}
                 t = str(row[8])
                 s = datetime.datetime.fromtimestamp(int(t))
-                da = s.strftime("%Y-%m-%dT%H:%M:%S")
+                da = s.strftime("%Y-%m-%dT")
                 d = da.split("T")
                 receiver[tusername]['joined'] = d[0]
 
@@ -418,9 +422,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE):
                         break
 
             if(flag == 0):
-                print("##",note)
                 continue
-            print(transactions)
             dates[cnt] = date[0]
             notes[cnt] = note
             myr[cnt] = month
@@ -459,8 +461,6 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE):
                     predictions = saved_model(token_ids, attention_mask=masks).numpy()
                     binary_predictions = np.where(predictions > 0.5, 1, 0)
                     test_preds.loc[start:end, label_cols] = binary_predictions
-                #P = "checkpoint/" + str(current)
-                #test_preds.to_csv(P, index=False)
 
                 # update stats
                 for index, row in test_preds.iterrows():
@@ -595,9 +595,8 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE):
 
         except:
             continue        
-    f.close()
+    #f.close()
 
-print("COUNT",cnt)
 # Last batch
 if cnt != 0:
     del dates[cnt:]
@@ -633,8 +632,6 @@ if cnt != 0:
         binary_predictions = np.where(predictions > 0.5, 1, 0)
         test_preds.loc[start:end, label_cols] = binary_predictions
     # update stat
-    #P = "checkpoint/" + str(current)
-    #test_preds.to_csv(P, index=False)
         
     for index, row in test_preds.iterrows():
         sen_flag = 1
