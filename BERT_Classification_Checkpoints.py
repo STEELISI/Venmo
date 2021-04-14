@@ -262,6 +262,18 @@ def preprocessing_cntd(tokens):
     return tokens
 #===============================================================#
 
+def bert_encoder(sentence):
+    encoded_dict = tokenizer.encode_plus(
+                        sentence,                      # Sentence to encode.
+                        add_special_tokens = True, # Add '[CLS]' and '[SEP]'
+                        truncation='longest_first',
+                        max_length = MAX_LEN,           # Pad & truncate all sentences.
+                        padding='max_length',
+                        return_attention_mask = True,   # Construct attn. masks.
+                        return_tensors = 'tf',     # Return tensorflow tensor.
+                   )
+    return encoded_dict['input_ids'], encoded_dict['attention_mask']
+
 def create_dataset(data_tuple, epochs=1, batch_size=32, buffer_size=100, train=False):
     dataset = tf.data.Dataset.from_tensor_slices(data_tuple)
     if train:
@@ -429,6 +441,15 @@ for line in f:
         myr[cnt] = month
         uname[cnt] = username
         tuname[cnt] = tusername
+
+##### Will's #####
+
+        ids, masks = bert_encoder(note)
+        predictions = saved_model(ids, attention_mask=masks).numpy()
+        binary_predictions = np.where(preds > 0.5, 1, 0)
+
+##################
+
         if cnt == (BATCH-1):
             current = transactions
             numbatch = numbatch + 1
