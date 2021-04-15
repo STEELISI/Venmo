@@ -21,8 +21,7 @@ PATH_TO_THE_JSON=$1
 PATH_TO_THE_OUTPUT_FOLDER=$2 
 echo "$PATH_TO_THE_JSON"
 echo "$PATH_TO_THE_OUTPUT_FOLDER"
-NUMBER_OF_INSTANCES=10
-SIZE_OF_EACH_INSTANCE=1000
+NUMBER_OF_INSTANCES=2
 PATH_TO_No_OF_NOTES_PROCESSED_BY_THE_OLD_SEQUENTIAL_SCRIPT="checkpoint/processed_till_now.txt"
 
 output_of_helper="" 
@@ -43,16 +42,13 @@ i=1
 first=$output_of_helper
 
 while [ $i -le $NUMBER_OF_INSTANCES ] ; do
-  #echo "Welcome $i times"
   if [ ! -d checkpoint_instance_$i ]; then
       mkdir -p checkpoint_instance_$i;
-      #if [ "$i" == 1 ]; then
-      #fi
   fi
   last=$(($first + $DIVISION_FOR_THE_REMAINING_NOTES))
   
   echo "STARTING INSTANCE $i which is in the range $first - $last"
-  #python3 BERT_Classification_Checkpoints_distributed.py $PATH_TO_THE_JSON $PATH_TO_THE_OUTPUT_FOLDER/Number_$i_instance $first $last checkpoint_instance_$i &
+  python3 BERT_Classification_Checkpoints_distributed.py $PATH_TO_THE_JSON "$PATH_TO_THE_OUTPUT_FOLDER/$i" $first $last checkpoint_instance_$i &
 
   first=$(($last + 1))
   i=$(($i+1))
