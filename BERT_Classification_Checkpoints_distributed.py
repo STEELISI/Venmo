@@ -32,9 +32,8 @@ if(len(sys.argv) != 6):
 
 #===============================================================#
 MAX_LEN = 10
-BATCH = 50000
+BATCH = 500
 INTERMEDIADTE = 10
-CHECKPOINT_INTERVAL = 20
 
 #===============================================================#
 current = 0
@@ -53,8 +52,8 @@ keywords = set()
 stopwords = set()
 date_category_stat = {}
 date_personal_stat = {}
-ending_point = int(str(sys.argv[4])
-starting_point = int(str(sys.argv[3])
+ending_point = int(str(sys.argv[4]))
+starting_point = int(str(sys.argv[3]))
 
 #===============================================================#
 TEST_BATCH = 32
@@ -122,6 +121,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
             print(" CHECKPOINT FILES AND DICTIONARIES LOADED SUCCESSFULLY!!!")
             print("=========================================================")
 
+print(current, starting_point, ending_point)
 if(starting_point > current):
     current = starting_point
 
@@ -300,8 +300,6 @@ for line in f:
         if(transactions > ending_point):
             break
         
-        #print(transactions,CHECKPOINT_INTERVAL)
-
         #==============================#
         ### Checks for Invalid JSONs ###
         #==============================#
@@ -440,6 +438,7 @@ for line in f:
         uname[cnt] = username
         tuname[cnt] = tusername
         if cnt == (BATCH-1):
+            INTERMEDIADTE = INTERMEDIADTE + 1
             current = transactions
             numbatch = numbatch + 1
             cnt = -1
@@ -518,8 +517,7 @@ for line in f:
                         receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
 
 
-            if(numbatch % CHECKPOINT_INTERVAL == 0 or INTERMEDIADTE%10 == 0):
-                INTERMEDIADTE = INTERMEDIADTE + 1
+            if(INTERMEDIADTE%3 == 0):
                 '''
                 with open("checkpoint/current.txt", "wb") as myFile:
                     pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
