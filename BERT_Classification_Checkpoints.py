@@ -152,8 +152,6 @@ saved_model.load_weights(MODEL_FILE)
 time.sleep(5)
 print("\n MODEL LOADED\n\n\n\n\n")
 
-c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * (BATCH - 1)
-
 #===============================================================#
 
 """
