@@ -310,8 +310,8 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
             timestampp = str(row[2])
             your_dt = datetime.datetime.fromtimestamp(int(timestampp))
             day = your_dt.strftime("%Y-%m-%dT")
-            if("2020" not in day):
-                continue
+            #if("2020" not in day):
+            #    continue
             date = day.split("T")
             month = date[0][2:7]
             note = row[9]

@@ -85,6 +85,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
         with open(dateper, "rb") as myFile:
             date_personal_stat = pickle.load(myFile)
 
+        '''
         send = SENDER_FILE + "." + str(current)
         if(not(os.path.exists(send))):
             send = SENDER_FILE
@@ -96,6 +97,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
             recv = RECEIVER_FILE
         with open(recv, "rb") as myFile:
             receiver = pickle.load(myFile)
+        '''
 
         if(len(date_category_stat) == 0 or len(date_category_stat) == 0 or len(sender) == 0 or len(receiver) == 0):
             print("===================================================================")
