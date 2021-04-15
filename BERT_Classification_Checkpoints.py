@@ -22,22 +22,13 @@ from transformers import BertTokenizer
 from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
-MAX_LEN = 10
-BATCH = 50000
-INTERMEDIADTE = 10
-CHECKPOINT_INTERVAL = 20
+
+BATCH = 5000000
+current = 0
+transactions = 0
 
 #===============================================================#
-current = 0
-numbatch = 0
-transactions = 0
-myr = [''] * BATCH
-dates = [''] * BATCH
-notes = [''] * BATCH
-uname = [''] * BATCH
-tuname = [''] * BATCH
-#===============================================================#
-cnt = 0
+
 sender = {}
 receiver = {}
 keywords = set()
@@ -46,7 +37,7 @@ date_category_stat = {}
 date_personal_stat = {}
 
 #===============================================================#
-TEST_BATCH = 32
+
 SENDER_FILE = "checkpoint/sender.txt"
 RECEIVER_FILE = "checkpoint/receiver.txt"
 CHECKPOINT_FILE = "checkpoint/current.txt"
@@ -55,6 +46,7 @@ MODEL_FILE = "BERT_MODEL/checkpoint_EPOCHS_6a"
 DATECAT_FILE = "checkpoint/date_category_stat.txt"
 DATEPER_FILE = "checkpoint/date_personal_stat.txt"
 PATH_TO_KEYWORDS_LIST = "data/UNIQ_KEYWORDS_LIST.txt"
+
 #===============================================================#
 
 pattern = re.compile(r"(.)\1{2,}")
@@ -118,6 +110,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
             print("=========================================================")
 
 #===============================================================#
+
 class BertClassifier(tf.keras.Model):    
     def __init__(self, bert: TFBertModel, num_classes: int):
         super().__init__()
@@ -136,22 +129,20 @@ class BertClassifier(tf.keras.Model):
                 
         return cls_output
 
-
 #===============================================================#
+
 with open(PATH_TO_STOPWORDS_LIST,'r') as fp:
     for l in fp:
         stopwords.add(l.strip())
 
-
 #===============================================================#
-#c0 = c1 = [' '] * BATCH
+
 cols_name = ['Date', 'Note','myr','uname','tuname','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 label_cols = cols_name[5:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
 sens_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','T']
 
 personal_cols = ['A','E','I','P','T']
 userfields = ['S','P','T','A']
-
 
 bert_model_name = 'bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(bert_model_name, do_lower_case=True)
@@ -162,6 +153,7 @@ time.sleep(5)
 print("\n MODEL LOADED\n\n\n\n\n")
 
 c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * (BATCH - 1)
+
 #===============================================================#
 
 """
@@ -267,29 +259,18 @@ def bert_encoder(sentence):
                         sentence,                      # Sentence to encode.
                         add_special_tokens = True, # Add '[CLS]' and '[SEP]'
                         truncation='longest_first',
-                        max_length = MAX_LEN,           # Pad & truncate all sentences.
+                        max_length = 10,           # Pad & truncate all sentences.
                         padding='max_length',
                         return_attention_mask = True,   # Construct attn. masks.
                         return_tensors = 'tf',     # Return tensorflow tensor.
                    )
     return encoded_dict['input_ids'], encoded_dict['attention_mask']
 
-def create_dataset(data_tuple, epochs=1, batch_size=32, buffer_size=100, train=False):
-    dataset = tf.data.Dataset.from_tensor_slices(data_tuple)
-    if train:
-        dataset = dataset.shuffle(buffer_size=buffer_size)
-    dataset = dataset.repeat(epochs)
-    dataset = dataset.batch(batch_size)
-    if train:
-        dataset = dataset.prefetch(1)
-
-    return dataset
-
 #===============================================================#
+
 with open(PATH_TO_KEYWORDS_LIST,'r') as fp:
     for l in fp:
         keywords.add(''.join(convert_letters(l.strip())))
-
 
 #===============================================================#
 #   MAIN FLOW                                                   #
@@ -325,8 +306,6 @@ for line in f:
         origtokens = nltk.word_tokenize(note)
         tokens_partial = preprocessing(origtokens)
         tokens = preprocessing_cntd(tokens_partial)
-
-
         
         if(username not in sender):
             sender[username] = {}
@@ -436,280 +415,159 @@ for line in f:
         if(flag == 0):
             continue
 
-        dates[cnt] = date[0]
-        notes[cnt] = note
-        myr[cnt] = month
-        uname[cnt] = username
-        tuname[cnt] = tusername
-
 ##### Will's #####
 
         ids, masks = bert_encoder(note)
         predictions = saved_model(ids, attention_mask=masks).numpy()
-        binary_predictions = np.where(preds > 0.5, 1, 0)
+        binary_predictions = np.where(preds > 0.5, 1, 0)[0]
 
 ##################
 
-        if cnt == (BATCH-1):
+        # update stats
+        sen_flag = 1
+        per_flag = 1
+
+        if date[0] not in date_category_stat:
+            date_category_stat[date[0]] = {col:0 for col in sens_cols}
+        for c in len(label_cols):
+            # label_cols  
+            # 0:'ADULT_CONTENT', 1:'HEALTH', 
+            # 2:'DRUGS_ALCOHOL_GAMBLING', 3:'RACE', 
+            # 4:'VIOLENCE_CRIME', 5:'POLITICS', 
+            # 6:'RELATION', 7:'LOCATION'
+            if binary_predictions[c] == 0:
+                continue
+            date_category_stat[date[0]][label_cols[c]] = date_category_stat[date[0]][label_cols[c]] + 1
+            if(per_flag and (label_cols[c] == 'RELATION' or label_cols[c] == 'LOCATION')):
+                date_personal_stat[date[0]]['T'] = date_personal_stat[date[0]]['T'] + 1
+                per_flag = 0
+                if(month not in sender[username]['dates']):
+                    sender[username]['dates'][month] = {col:0 for col in userfields}
+                sender[username]['dates'][month]['P'] = sender[username]['dates'][month]['P'] + 1
+                sender[username]['dates'][month]['T'] = sender[username]['dates'][month]['T'] + 1
+                if(date[0] not in receiver[tusername]['dates']):
+                    receiver[tusername]['dates'][month] = {col:0 for col in userfields}
+                receiver[tusername]['dates'][month]['P'] = receiver[tusername]['dates'][month]['P'] + 1
+                receiver[tusername]['dates'][month]['T'] = receiver[tusername]['dates'][month]['T'] + 1
+
+
+
+            elif(sen_flag and not(label_cols[c] == 'RELATION' or label_cols[c] == 'LOCATION')):
+                date_category_stat[date[0]]['T'] = date_category_stat[date[0]]['T'] + 1
+                sen_flag = 0
+                if(month not in sender[username]['dates']):
+                    sender[username]['dates'][month] = {col:0 for col in userfields}
+                sender[username]['dates'][month]['S'] = sender[username]['dates'][month]['S'] + 1
+                sender[username]['dates'][month]['T'] = sender[username]['dates'][month]['T'] + 1
+
+                if(month not in receiver[tusername]['dates']):
+                    receiver[tusername]['dates'][month] = {col:0 for col in userfields}
+                receiver[tusername]['dates'][month]['S'] = receiver[tusername]['dates'][month]['S'] + 1
+                receiver[tusername]['dates'][month]['T'] = receiver[tusername]['dates'][month]['T'] + 1
+
+        # Write stats
+        if(transactions % BATCH == 0):
             current = transactions
-            numbatch = numbatch + 1
-            cnt = -1
-            table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9)
-            table = list(table)
-            table = [list(r) for r in table]
-            test_preds = pd.DataFrame(np.array(table), columns=cols_name)
+            '''
+            with open("checkpoint/current.txt", "wb") as myFile:
+                pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+            with open("checkpoint/date_category_stat.txt", "wb") as myFile:
+                pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+            with open("checkpoint/date_personal_stat.txt", "wb") as myFile:
+                pickle.dump(date_personal_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+            with open("checkpoint/sender.txt", "wb") as myFile:
+                pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+            with open("checkpoint/receiver.txt", "wb") as myFile:
+                pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+            '''
 
-            test_input_ids = []
-            test_attention_masks = []
+            strcurrent = "." + str(current)
+            datecat = DATECAT_FILE
+            dateper  = DATEPER_FILE
+            with open(CHECKPOINT_FILE, "wb") as myFile:
+                pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+            with open(datecat, "wb") as myFile:
+                pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+            with open(dateper, "wb") as myFile:
+                pickle.dump(date_personal_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+            send = SENDER_FILE + strcurrent
+            with open(send, "wb") as myFile:
+                pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+            recv = RECEIVER_FILE + strcurrent
+            with open(recv, "wb") as myFile:
+                pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
-            for sent in test_preds['Note']:
-                encoded_dict = tokenizer.encode_plus(
-                                    sent,                      # Sentence to encode.
-                                    add_special_tokens = True, # Add '[CLS]' and '[SEP]'
-                                    truncation='longest_first',
-                                    max_length = MAX_LEN,           # Pad & truncate all sentences.
-                                    pad_to_max_length = True,
-                                    return_attention_mask = True,   # Construct attn. masks.
-                                    # return_tensors = 'tf',     # Return tensorflow tensor.
-                               )
-                test_input_ids.append(encoded_dict['input_ids'])
-                test_attention_masks.append(encoded_dict['attention_mask'])
-
-            test_dataset = create_dataset((test_input_ids, test_attention_masks), epochs=1, batch_size=32, train=False)
-            # prediction
-            for i, (token_ids, masks) in enumerate(test_dataset):
-                start = i * TEST_BATCH
-                end = (i+1) * TEST_BATCH - 1
-                predictions = saved_model(token_ids, attention_mask=masks).numpy()
-                binary_predictions = np.where(predictions > 0.5, 1, 0)
-                test_preds.loc[start:end, label_cols] = binary_predictions
-            
-
-            # update stats
-            for index, row in test_preds.iterrows():
-                #update(row)
-                sen_flag = 1
-                per_flag = 1
-                date = str(row['Date'])
-                un = str(row['uname'])
-                tun = str(row['tuname'])
-                mon = str(row['myr'])
-
-                if date not in date_category_stat:
-                    date_category_stat[date] = {col:0 for col in sens_cols}
-                for col in label_cols:
-                    if row[col] == 0:
-                        continue
-                    date_category_stat[date][col] = date_category_stat[date][col] + 1
-                    if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
-                        date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
-                        per_flag = 0
-                        if(mon not in sender[un]['dates']):
-                            sender[un]['dates'][mon] = {col:0 for col in userfields}
-                        sender[un]['dates'][mon]['P'] = sender[un]['dates'][mon]['P'] + 1
-                        sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-                        if(date not in receiver[tun]['dates']):
-                            receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                        receiver[tun]['dates'][mon]['P'] = receiver[tun]['dates'][mon]['P'] + 1
-                        receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
+            df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=sens_cols)
+            df_stat = df_stat.rename_axis('Date').reset_index()
+            df_stat.to_csv(sys.argv[2] + "sen.output", index=False)
 
 
+            df_stat = pd.DataFrame.from_dict(date_personal_stat, orient='index', columns=personal_cols)
+            df_stat = df_stat.rename_axis('Date').reset_index()
+            df_stat.to_csv(sys.argv[2] + "per.output", index=False)
+            outputfile = open(sys.argv[2],"w")
+            outputfile.write("TRANSACTIONS PROCESSED TILL NOW = " + str(current) + "\n")
+            scnt=-1
+            for k,v in sender.items():
+                if(v is None):
+                    continue
+                scnt = scnt + 1
+                s = ""
+                try:
+                    s = str(scnt) + "|"
+                    if('joined' in sender[k]):
+                        s = s + str(sender[k]['joined'])
+                    s = s + "|"
 
-                    elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
-                        date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
-                        sen_flag = 0
-                        if(mon not in sender[un]['dates']):
-                            sender[un]['dates'][mon] = {col:0 for col in userfields}
-                        sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
-                        sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
+                    if('dates' in sender[k]):
+                        for kk,vv in sender[k]['dates'].items():
+                            s = s + str(kk) + "," +  str(sender[k]['dates'][kk]['S']) + "," + str(sender[k]['dates'][kk]['P']) + "," + str(sender[k]['dates'][kk]['T']) + "," + str(sender[k]['dates'][kk]['A']) + ";"
 
-                        if(mon not in receiver[tun]['dates']):
-                            receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                        receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
-                        receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
-
-
-            if(numbatch % CHECKPOINT_INTERVAL == 0 or INTERMEDIADTE%10 == 0):
-                INTERMEDIADTE = INTERMEDIADTE + 1
-                '''
-                with open("checkpoint/current.txt", "wb") as myFile:
-                    pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-                with open("checkpoint/date_category_stat.txt", "wb") as myFile:
-                    pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-                with open("checkpoint/date_personal_stat.txt", "wb") as myFile:
-                    pickle.dump(date_personal_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-                with open("checkpoint/sender.txt", "wb") as myFile:
-                    pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-                with open("checkpoint/receiver.txt", "wb") as myFile:
-                    pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-                '''
-
-                strcurrent = "." + str(current)
-                datecat = DATECAT_FILE
-                dateper  = DATEPER_FILE
-                with open(CHECKPOINT_FILE, "wb") as myFile:
-                    pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-                with open(datecat, "wb") as myFile:
-                    pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-                with open(dateper, "wb") as myFile:
-                    pickle.dump(date_personal_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-                send = SENDER_FILE + strcurrent
-                with open(send, "wb") as myFile:
-                    pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-                recv = RECEIVER_FILE + strcurrent
-                with open(recv, "wb") as myFile:
-                    pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-
-                df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=sens_cols)
-                df_stat = df_stat.rename_axis('Date').reset_index()
-                df_stat.to_csv(sys.argv[2] + "sen.output", index=False)
+                    s = s + "|"
+                    if(k in receiver and 'dates' in receiver[k]):
+                        for kk,vv in receiver[k]['dates'].items():
+                            s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
 
 
-                df_stat = pd.DataFrame.from_dict(date_personal_stat, orient='index', columns=personal_cols)
-                df_stat = df_stat.rename_axis('Date').reset_index()
-                df_stat.to_csv(sys.argv[2] + "per.output", index=False)
-                outputfile = open(sys.argv[2],"w")
-                outputfile.write("TRANSACTIONS PROCESSED TILL NOW = " + str(current) + "\n")
-                scnt=-1
-                for k,v in sender.items():
-                    if(v is None):
-                        continue
-                    scnt = scnt + 1
-                    s = ""
-                    try:
-                        s = str(scnt) + "|"
-                        if('joined' in sender[k]):
-                            s = s + str(sender[k]['joined'])
-                        s = s + "|"
+                    outputfile.write(s + "\n")
+                except:
+                    continue
 
-                        if('dates' in sender[k]):
-                            for kk,vv in sender[k]['dates'].items():
-                                s = s + str(kk) + "," +  str(sender[k]['dates'][kk]['S']) + "," + str(sender[k]['dates'][kk]['P']) + "," + str(sender[k]['dates'][kk]['T']) + "," + str(sender[k]['dates'][kk]['A']) + ";"
+            outputfile.close()
 
-                        s = s + "|"
-                        if(k in receiver and 'dates' in receiver[k]):
-                            for kk,vv in receiver[k]['dates'].items():
-                                s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
+            outputfile1 = open(sys.argv[2] + "recv.output","w")
+            rcnt=-1
+            for k,v in receiver.items():
+                if(v is None or k in sender):
+                    continue
+                rcnt = rcnt + 1
+                s = ""
+                try:
+                    s = str(rcnt) + "|"
+                    if('joined' in receiver[k]):
+                        s = s + str(receiver[k]['joined'])
+                    s = s + "|"
 
+                    if('dates' in receiver[k]):
+                        for kk,vv in receiver[k]['dates'].items():
+                            s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
 
-                        outputfile.write(s + "\n")
-                    except:
-                        continue
+                    outputfile1.write(s + "\n")
+                except:
+                    continue
+   
+            outputfile1.close()
+            sender.clear()
+            receiver.clear()
 
-                outputfile.close()
-
-                outputfile1 = open(sys.argv[2] + "recv.output","w")
-                rcnt=-1
-                for k,v in receiver.items():
-                    if(v is None or k in sender):
-                        continue
-                    rcnt = rcnt + 1
-                    s = ""
-                    try:
-                        s = str(rcnt) + "|"
-                        if('joined' in receiver[k]):
-                            s = s + str(receiver[k]['joined'])
-                        s = s + "|"
-
-                        if('dates' in receiver[k]):
-                            for kk,vv in receiver[k]['dates'].items():
-                                s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
-
-                        outputfile1.write(s + "\n")
-                    except:
-                        continue
-       
-                outputfile1.close()
-                sender.clear()
-                receiver.clear()
-
-            # reset counter
-            #cnt = -1
+        # reset counter
+        #cnt = -1
                  
-        cnt = cnt + 1
 
 
     except:
         continue        
 f.close()
-
-# Last batch
-if cnt != 0:
-    del dates[cnt:]
-    del notes[cnt:]
-    c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
-    table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9)
-    table = list(table)
-    table = [list(r) for r in table]
-    test_preds = pd.DataFrame(np.array(table), columns=cols_name)
-    test_input_ids = []
-    test_attention_masks = []
-
-    for sent in test_preds['Note']:
-        encoded_dict = tokenizer.encode_plus(
-                            sent,                      # Sentence to encode.
-                            add_special_tokens = True, # Add '[CLS]' and '[SEP]'
-                            truncation='longest_first',
-                            max_length = MAX_LEN,           # Pad & truncate all sentences.
-                            pad_to_max_length = True,
-                            return_attention_mask = True,   # Construct attn. masks.
-                            # return_tensors = 'tf',     # Return tensorflow tensor.
-                       )
-        test_input_ids.append(encoded_dict['input_ids'])
-        test_attention_masks.append(encoded_dict['attention_mask'])
-
-
-    test_dataset = create_dataset((test_input_ids, test_attention_masks), epochs=1, batch_size=32, train=False)
-    # prediction
-    for i, (token_ids, masks) in enumerate(test_dataset):
-        start = i * TEST_BATCH
-        end = (i+1) * TEST_BATCH - 1
-        predictions = saved_model(token_ids, attention_mask=masks).numpy()
-        binary_predictions = np.where(predictions > 0.5, 1, 0)
-        test_preds.loc[start:end, label_cols] = binary_predictions
-    # update stat
-    for index, row in test_preds.iterrows():
-        sen_flag = 1
-        per_flag = 1
-        date = str(row['Date'])
-        un = str(row['uname'])
-        tun = str(row['tuname'])
-        mon = str(row['myr'])
-        if date not in date_category_stat:
-            date_category_stat[date] = {col:0 for col in sens_cols}
-        for col in label_cols:
-            if row[col] == 0:
-                continue
-            date_category_stat[date][col] = date_category_stat[date][col] + 1
-            if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
-                date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
-                per_flag = 0
-                if(mon not in sender[un]['dates']):
-                    sender[un]['dates'][mon] = {col:0 for col in userfields}
-                sender[un]['dates'][mon]['P'] = sender[un]['dates'][mon]['P'] + 1
-                sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-                if(mon not in receiver[tun]['dates']):
-                    receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                receiver[tun]['dates'][mon]['P'] = receiver[tun]['dates'][mon]['P'] + 1
-                receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
-
-
-            elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
-                date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
-                sen_flag = 0
-
-                if(mon not in sender[un]['dates']):
-                    sender[un]['dates'][mon] = {col:0 for col in userfields}
-                sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
-                sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-
-                if(mon not in receiver[tun]['dates']):
-                    receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
-                receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
-
-
-
     
 # Write stats
 
