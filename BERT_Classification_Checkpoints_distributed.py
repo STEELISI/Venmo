@@ -37,7 +37,6 @@ INTERMEDIADTE = 10
 
 #===============================================================#
 current = 0
-numbatch = 0
 transactions = 0
 myr = [''] * BATCH
 dates = [''] * BATCH
@@ -109,7 +108,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
             receiver = pickle.load(myFile)
         '''
 
-        if(len(date_category_stat) == 0 or len(date_category_stat) == 0 or len(sender) == 0 or len(receiver) == 0):
+        if(len(date_category_stat) == 0 or len(date_category_stat) == 0): # or len(sender) == 0 or len(receiver) == 0):
             print("===================================================================")
             print("****** COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.******")
             print("***                YOU NEED TO RECOMPUTE THINGS AGAIN.          ***")
@@ -440,7 +439,6 @@ for line in f:
         if cnt == (BATCH-1):
             INTERMEDIADTE = INTERMEDIADTE + 1
             current = transactions
-            numbatch = numbatch + 1
             cnt = -1
             table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9)
             table = list(table)
