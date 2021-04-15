@@ -23,9 +23,10 @@ from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
 
-BATCH = 5000000
+BATCH = 50000
 current = 0
 transactions = 0
+checkpoint_flag = 0
 
 #===============================================================#
 
@@ -139,6 +140,7 @@ with open(PATH_TO_STOPWORDS_LIST,'r') as fp:
 
 cols_name = ['Date', 'Note','myr','uname','tuname','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 label_cols = cols_name[5:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
+length_of_label_cols = len(label_cols)
 sens_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','T']
 
 personal_cols = ['A','E','I','P','T']
@@ -274,14 +276,17 @@ with open(PATH_TO_KEYWORDS_LIST,'r') as fp:
 #   MAIN FLOW                                                   #
 #===============================================================#
 
+start_time1 = time.time()
 for line in f:
     data = json.loads(line)
     transactions = transactions + 1
     try:
         if(transactions < current):
             continue
-        
+        #start_time1 = time.time()
         #print(transactions,CHECKPOINT_INTERVAL)
+        if(transactions%BATCH == 0):
+            checkpoint_flag = 1
 
         #==============================#
         ### Checks for Invalid JSONs ###
@@ -417,17 +422,18 @@ for line in f:
 
         ids, masks = bert_encoder(note)
         predictions = saved_model(ids, attention_mask=masks).numpy()
-        binary_predictions = np.where(preds > 0.5, 1, 0)[0]
-
+        binary_predictions = np.where(predictions > 0.5, 1, 0)[0]
+        #print("--- %s Process seconds ---" % (time.time() - start_time1),note,transactions)
+        #print(binary_predictions)
+        
 ##################
 
         # update stats
         sen_flag = 1
         per_flag = 1
-
         if date[0] not in date_category_stat:
             date_category_stat[date[0]] = {col:0 for col in sens_cols}
-        for c in len(label_cols):
+        for c in range(length_of_label_cols):
             # label_cols  
             # 0:'ADULT_CONTENT', 1:'HEALTH', 
             # 2:'DRUGS_ALCOHOL_GAMBLING', 3:'RACE', 
@@ -462,10 +468,11 @@ for line in f:
                     receiver[tusername]['dates'][month] = {col:0 for col in userfields}
                 receiver[tusername]['dates'][month]['S'] = receiver[tusername]['dates'][month]['S'] + 1
                 receiver[tusername]['dates'][month]['T'] = receiver[tusername]['dates'][month]['T'] + 1
-
+        #print("--- %s Process seconds ---" % (time.time() - start_time1),note,transactions)
         # Write stats
-        if(transactions % BATCH == 0):
+        if(checkpoint_flag == 1):
             current = transactions
+            checkpoint_flag = 0
             '''
             with open("checkpoint/current.txt", "wb") as myFile:
                 pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
@@ -632,3 +639,5 @@ for k,v in receiver.items():
         continue
 
 outputfile1.close()
+
+print("--- %s Process seconds ---" % (time.time() - start_time1),note,transactions)
