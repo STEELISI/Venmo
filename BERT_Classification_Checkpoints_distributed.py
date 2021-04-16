@@ -3,7 +3,7 @@
 # python3 BERT_Classification_Checkpoints_distributed.py <path to the input json file> <path to the output file> <range-start> <range-end> <checkpoint path>   #
 #**************************************************************************************************************************************************************#
 # Example:                                                                                                                                                     #
-# python3 BERT_Classification_Checkpoints.py /Users/rajattan/venmo/dummy.json outputfolder/samp 120000000 150000000 checkpoint_instance_1                      #
+# python3 BERT_Classification_Checkpoints_distributed.py /Users/rajattan/venmo/dummy.json outputfolder/samp 120000000 150000000 checkpoint_instance_1          #
 #==============================================================================================================================================================#
 import re
 import sys
