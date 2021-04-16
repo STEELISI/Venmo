@@ -249,16 +249,20 @@ def remove_stopwords(tokens):
 """
 Preprocessing Work 
 """
-def preprocessing(note):
-    tokens = nltk.word_tokenize(note)
+def preprocessing(origtokens):
     tokens = convert_letters(origtokens)
     tokens = reduce_lengthening(tokens)
+    return tokens
+#===============================================================#
+"""
+More Preprocessing Work 
+"""
+def preprocessing_cntd(tokens):
     tokens = remove_stopwords(tokens)
     tokens = remove_special(tokens)
     tokens = remove_blanc(tokens)
     tokens = [t for t in tokens if len(t) != 0]
-    note = ' '.join(tokens).strip()
-    return note
+    return tokens
 #===============================================================#
 
 def create_dataset(data_tuple, epochs=1, batch_size=32, buffer_size=100, train=False):
@@ -292,17 +296,10 @@ with open(PATH_TO_KEYWORDS_LIST,'r') as fp:
 
 
 for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False):
-
-
-
-    chunk['clean_note'] = chunk['message'].apply(preprocessing)
-
-
-
     for row in chunk.itertuples():
         transactions = transactions + 1
         try:
-            if(transactions < current or len(row) != 10):
+            if(transactions < current or len(row) != 9):
                 continue
             username = row[5]
             tusername = row[6]
@@ -314,10 +311,10 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
             #    continue
             date = day.split("T")
             month = date[0][2:7]
-            note = row[9]
-            #origtokens = nltk.word_tokenize(note)
-            #tokens_partial = preprocessing(origtokens)
-            #tokens = preprocessing_cntd(tokens_partial)
+            note = row[1]
+            origtokens = nltk.word_tokenize(note)
+            tokens_partial = preprocessing(origtokens)
+            tokens = preprocessing_cntd(tokens_partial)
 
 
         
@@ -391,7 +388,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                 date_personal_stat[date[0]]['A'] = date_personal_stat[date[0]]['A'] + 1
 
             
-            #note = ' '.join(tokens).strip()
+            note = ' '.join(tokens).strip()
 
             if(len(note) == 0 or  english_ch.search(note) == None):# or (not(detect(note) == "en"))):
                 continue
