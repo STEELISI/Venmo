@@ -99,7 +99,6 @@ if(os.path.exists(CHECKPOINT_FILE)):
             send = SENDER_FILE
         with open(send, "rb") as myFile:
             sender = pickle.load(myFile)
-
         recv = RECEIVER_FILE + "." + str(current)
         if(not(os.path.exists(recv))):
             recv = RECEIVER_FILE
@@ -107,7 +106,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
             receiver = pickle.load(myFile)
         '''
 
-        if(len(date_category_stat) == 0 or len(date_category_stat) == 0 or len(sender) == 0 or len(receiver) == 0):
+        if(len(date_category_stat) == 0 or len(date_category_stat) == 0): # or len(sender) == 0 or len(receiver) == 0):
             print("===================================================================")
             print("****** COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.******")
             print("***                YOU NEED TO RECOMPUTE THINGS AGAIN.          ***")
