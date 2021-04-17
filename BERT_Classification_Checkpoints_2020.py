@@ -266,7 +266,7 @@ def preprocessing_cntd(note):
     tokens = remove_blanc(tokens)
     tokens = [t for t in tokens if len(t) != 0]
     note = ' '.join(tokens).strip()
-    return tokens
+    return note
 #===============================================================#
 
 def create_dataset(data_tuple, epochs=1, batch_size=32, buffer_size=100, train=False):
