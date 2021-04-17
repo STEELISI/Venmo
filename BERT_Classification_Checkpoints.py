@@ -107,7 +107,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
             receiver = pickle.load(myFile)
         '''
 
-        if(len(date_category_stat) == 0 or len(date_category_stat) == 0 or len(sender) == 0 or len(receiver) == 0):
+        if(len(date_category_stat) == 0 or len(date_category_stat) == 0):# or len(sender) == 0 or len(receiver) == 0):
             print("===================================================================")
             print("****** COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.******")
             print("***                YOU NEED TO RECOMPUTE THINGS AGAIN.          ***")
