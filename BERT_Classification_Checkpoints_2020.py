@@ -247,18 +247,26 @@ def remove_stopwords(tokens):
     return [token for token in tokens if token not in stopwords]
 #===============================================================#
 """
-Preprocessing Work 
+Preprocessing Work
 """
-def preprocessing(note):
-    tokens = nltk.word_tokenize(note)
+def preprocessing(origtokens):
     tokens = convert_letters(origtokens)
+    tokens = reduce_lengthening(tokens)
+    return tokens
+#===============================================================#
+"""
+More Preprocessing Work
+"""
+def preprocessing_cntd(note):
+    tokens = nltk.word_tokenize(note)
+    tokens = convert_letters(tokens)
     tokens = reduce_lengthening(tokens)
     tokens = remove_stopwords(tokens)
     tokens = remove_special(tokens)
     tokens = remove_blanc(tokens)
     tokens = [t for t in tokens if len(t) != 0]
     note = ' '.join(tokens).strip()
-    return note
+    return tokens
 #===============================================================#
 
 def create_dataset(data_tuple, epochs=1, batch_size=32, buffer_size=100, train=False):
@@ -294,7 +302,7 @@ with open(PATH_TO_KEYWORDS_LIST,'r') as fp:
 for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False):
 
 
-    chunk['clean_text'] = chunk['message'].apply(preprocessing)
+    chunk['clean_text'] = chunk['message'].apply(preprocessing_cntd)
 
 
     for row in chunk.itertuples():
@@ -313,8 +321,8 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
             date = day.split("T")
             month = date[0][2:7]
             note = row[9]
-            #origtokens = nltk.word_tokenize(note)
-            #tokens_partial = preprocessing(origtokens)
+            origtokens = nltk.word_tokenize(row[1])
+            tokens_partial = preprocessing(origtokens)
             #tokens = preprocessing_cntd(tokens_partial)
 
 
