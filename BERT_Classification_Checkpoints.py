@@ -99,7 +99,6 @@ if(os.path.exists(CHECKPOINT_FILE)):
             send = SENDER_FILE
         with open(send, "rb") as myFile:
             sender = pickle.load(myFile)
-
         recv = RECEIVER_FILE + "." + str(current)
         if(not(os.path.exists(recv))):
             recv = RECEIVER_FILE
@@ -107,7 +106,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
             receiver = pickle.load(myFile)
         '''
 
-        if(len(date_category_stat) == 0 or len(date_category_stat) == 0):# or len(sender) == 0 or len(receiver) == 0):
+        if(len(date_category_stat) == 0 or len(date_category_stat) == 0): # or len(sender) == 0 or len(receiver) == 0):
             print("===================================================================")
             print("****** COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.******")
             print("***                YOU NEED TO RECOMPUTE THINGS AGAIN.          ***")
@@ -690,7 +689,21 @@ if cnt != 0:
                 receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
 
 
-
+strcurrent = "." + str(transactions)
+datecat = DATECAT_FILE
+dateper  = DATEPER_FILE
+with open(CHECKPOINT_FILE, "wb") as myFile:
+    pickle.dump(transactions, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+with open(datecat, "wb") as myFile:
+    pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+with open(dateper, "wb") as myFile:
+    pickle.dump(date_personal_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+send = SENDER_FILE + strcurrent
+with open(send, "wb") as myFile:
+    pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+recv = RECEIVER_FILE + strcurrent
+with open(recv, "wb") as myFile:
+    pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
     
 # Write stats
 
@@ -704,7 +717,7 @@ df_stat = df_stat.rename_axis('Date').reset_index()
 df_stat.to_csv(sys.argv[2] + "per.output", index=False)
 
 outputfile = open(sys.argv[2],"w")
-outputfile.write("TRANSACTIONS PROCESSED TILL NOW = " + str(current) + "\n")
+outputfile.write("TRANSACTIONS PROCESSED TILL NOW = " + str(transactions) + "\n")
 scnt=-1
 for k,v in sender.items():
     if(v is None):
