@@ -27,7 +27,7 @@ from tensorflow.keras.layers import Dense, Flatten
 MAX_LEN = 10
 BATCH = 50000
 INTERMEDIADTE = 10
-CHECKPOINT_INTERVAL = 20
+CHECKPOINT_INTERVAL = 4
 CHUNKSIZE = 1000
 
 #===============================================================#
@@ -307,8 +307,6 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
             timestampp = str(row[2])
             your_dt = datetime.datetime.fromtimestamp(int(timestampp))
             day = your_dt.strftime("%Y-%m-%dT")
-            #if("2020" not in day):
-            #    continue
             date = day.split("T")
             month = date[0][2:7]
             note = row[1]
@@ -636,45 +634,64 @@ if cnt != 0:
     # update stat
         
     for index, row in test_preds.iterrows():
-        sen_flag = 1
-        per_flag = 1
-        date = str(row['Date'])
-        un = str(row['uname'])
-        tun = str(row['tuname'])
-        mon = str(row['myr'])
-        if date not in date_category_stat:
-            date_category_stat[date] = {col:0 for col in sens_cols}
-        for col in label_cols:
-            if row[col] == 0:
-                continue
-            date_category_stat[date][col] = date_category_stat[date][col] + 1
-            if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
-                date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
-                per_flag = 0
-                if(mon not in sender[un]['dates']):
-                    sender[un]['dates'][mon] = {col:0 for col in userfields}
-                sender[un]['dates'][mon]['P'] = sender[un]['dates'][mon]['P'] + 1
-                sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-                if(mon not in receiver[tun]['dates']):
-                    receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                receiver[tun]['dates'][mon]['P'] = receiver[tun]['dates'][mon]['P'] + 1
-                receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
+        try:
+            sen_flag = 1
+            per_flag = 1
+            date = str(row['Date'])
+            un = str(row['uname'])
+            tun = str(row['tuname'])
+            mon = str(row['myr'])
+            if date not in date_category_stat:
+                date_category_stat[date] = {col:0 for col in sens_cols}
+            for col in label_cols:
+                if row[col] == 0:
+                    continue
+                date_category_stat[date][col] = date_category_stat[date][col] + 1
+                if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
+                    date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
+                    per_flag = 0
+                    if(mon not in sender[un]['dates']):
+                        sender[un]['dates'][mon] = {col:0 for col in userfields}
+                    sender[un]['dates'][mon]['P'] = sender[un]['dates'][mon]['P'] + 1
+                    sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
+                    if(mon not in receiver[tun]['dates']):
+                        receiver[tun]['dates'][mon] = {col:0 for col in userfields}
+                    receiver[tun]['dates'][mon]['P'] = receiver[tun]['dates'][mon]['P'] + 1
+                    receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
 
 
-            elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
-                date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
-                sen_flag = 0
+                elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
+                    date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
+                    sen_flag = 0
 
-                if(mon not in sender[un]['dates']):
-                    sender[un]['dates'][mon] = {col:0 for col in userfields}
-                sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
-                sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
+                    if(mon not in sender[un]['dates']):
+                        sender[un]['dates'][mon] = {col:0 for col in userfields}
+                    sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
+                    sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
 
-                if(mon not in receiver[tun]['dates']):
-                    receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
-                receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
+                    if(mon not in receiver[tun]['dates']):
+                        receiver[tun]['dates'][mon] = {col:0 for col in userfields}
+                    receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
+                    receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
+        except:
+            continue
 
+
+strcurrent = "." + str(transactions)
+datecat = DATECAT_FILE
+dateper  = DATEPER_FILE
+with open(CHECKPOINT_FILE, "wb") as myFile:
+    pickle.dump(transactions, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+with open(datecat, "wb") as myFile:
+    pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+with open(dateper, "wb") as myFile:
+    pickle.dump(date_personal_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+send = SENDER_FILE + strcurrent
+with open(send, "wb") as myFile:
+    pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+recv = RECEIVER_FILE + strcurrent
+with open(recv, "wb") as myFile:
+    pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
 
     
