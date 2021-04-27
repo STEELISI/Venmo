@@ -398,7 +398,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                     break 
 
             if(per_flag == 1):
-                date_personal_stat[date[0]]['T'] = date_personal_stat[date]['T'] + 1
+                date_personal_stat[date[0]]['T'] = date_personal_stat[date[0]]['T'] + 1
                 if(month not in sender[username]['dates']):
                     sender[username]['dates'][month] = {col:0 for col in userfields}
                 sender[username]['dates'][month]['P'] = sender[username]['dates'][month]['P'] + 1
