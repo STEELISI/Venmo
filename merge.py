@@ -102,7 +102,7 @@ r_outputfile = open(write_path + 'receiver_summary.txt', "w")
 r_index = -1
 
 for k,v in receiver_final_stat.items():
-    if(v is None):
+    if(v is None or v in sender_final_stat):
         continue
     r_index = r_index + 1
     s = ""
