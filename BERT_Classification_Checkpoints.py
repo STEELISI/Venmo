@@ -6,6 +6,7 @@
 # python3 BERT_Classification_Checkpoints.py /Users/rajattan/venmo/dummy.json ./transactions_date_wise.txt   #
 #============================================================================================================#
 import re
+import os
 import sys
 import time
 import json
@@ -410,7 +411,7 @@ for line in f:
                 break 
 
         if(per_flag == 1):
-            date_personal_stat[date[0]]['TO'] = date_personal_stat[date]['TO'] + 1
+            date_personal_stat[date[0]]['TO'] = date_personal_stat[date[0]]['TO'] + 1
             if(overlap > 1):
                 date_personal_stat[date[0]]['O'] = date_personal_stat[date[0]]['O'] + 1      
             if(month not in sender[username]['dates']):
@@ -597,6 +598,9 @@ for line in f:
 
     except Exception as e:
         print(e)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
         continue        
 f.close()
 
