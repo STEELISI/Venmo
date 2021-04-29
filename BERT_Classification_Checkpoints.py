@@ -23,8 +23,8 @@ from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
 MAX_LEN = 10
-BATCH = 50000
-CHECKPOINT_INTERVAL = 20
+BATCH = 500
+CHECKPOINT_INTERVAL = 2
 
 #===============================================================#
 current = 0
@@ -487,20 +487,6 @@ for line in f:
                     if row[col] == 0:
                         continue
                     date_category_stat[date][col] = date_category_stat[date][col] + 1
-                    
-                    '''
-                    if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
-                        date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
-                        per_flag = 0
-                        if(mon not in sender[un]['dates']):
-                            sender[un]['dates'][mon] = {col:0 for col in userfields}
-                        sender[un]['dates'][mon]['P'] = sender[un]['dates'][mon]['P'] + 1
-                        sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-                        if(date not in receiver[tun]['dates']):
-                            receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                        receiver[tun]['dates'][mon]['P'] = receiver[tun]['dates'][mon]['P'] + 1
-                        receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
-                    '''
 
                     if(mon not in sender[un]['dates']):
                         sender[un]['dates'][mon] = {col:0 for col in userfields}
@@ -647,47 +633,36 @@ if cnt != 0:
         predictions = saved_model(token_ids, attention_mask=masks).numpy()
         binary_predictions = np.where(predictions > 0.5, 1, 0)
         test_preds.loc[start:end, label_cols] = binary_predictions
-    # update stat
+
     for index, row in test_preds.iterrows():
         sen_flag = 1
-        per_flag = 1
         date = str(row['Date'])
         un = str(row['uname'])
         tun = str(row['tuname'])
         mon = str(row['myr'])
+
         if date not in date_category_stat:
             date_category_stat[date] = {col:0 for col in sens_cols}
         for col in label_cols:
             if row[col] == 0:
                 continue
             date_category_stat[date][col] = date_category_stat[date][col] + 1
-            if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
-                date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
-                per_flag = 0
-                if(mon not in sender[un]['dates']):
-                    sender[un]['dates'][mon] = {col:0 for col in userfields}
-                sender[un]['dates'][mon]['P'] = sender[un]['dates'][mon]['P'] + 1
-                sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-                if(mon not in receiver[tun]['dates']):
-                    receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                receiver[tun]['dates'][mon]['P'] = receiver[tun]['dates'][mon]['P'] + 1
-                receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
+
+            if(mon not in sender[un]['dates']):
+                sender[un]['dates'][mon] = {col:0 for col in userfields}
+            if(mon not in receiver[tun]['dates']):
+                receiver[tun]['dates'][mon] = {col:0 for col in userfields}
+            sender[un]['dates'][mon][col] = sender[un]['dates'][mon][col] + 1
+            receiver[tun]['dates'][mon][col] = receiver[tun]['dates'][mon][col] + 1
 
 
-            elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
+            if(sen_flag):
                 date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
                 sen_flag = 0
-
-                if(mon not in sender[un]['dates']):
-                    sender[un]['dates'][mon] = {col:0 for col in userfields}
                 sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
                 sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-
-                if(mon not in receiver[tun]['dates']):
-                    receiver[tun]['dates'][mon] = {col:0 for col in userfields}
                 receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
                 receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
-
 
 strcurrent = "." + str(transactions)
 datecat = DATECAT_FILE
@@ -732,14 +707,18 @@ for k,v in sender.items():
 
         if('dates' in sender[k]):
             for kk,vv in sender[k]['dates'].items():
-                s = s + str(kk) + "," +  str(sender[k]['dates'][kk]['S']) + "," + str(sender[k]['dates'][kk]['P']) + "," + str(sender[k]['dates'][kk]['T']) + "," + str(sender[k]['dates'][kk]['A']) + ";"
-        
+                s = s + str(kk)
+                for kkk,vvv in sorted(vv.items()):
+                    s = s + "," + str(kkk) + ":" +  str(vvv)
+                s = s + ";"
+
         s = s + "|"
         if(k in receiver and 'dates' in receiver[k]):
             for kk,vv in receiver[k]['dates'].items():
-                s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
-    
-        
+                s = s + str(kk)
+                for kkk,vvv in sorted(vv.items()):
+                    s = s + "," + str(kkk) + ":" +  str(vvv)
+                s = s + ";"
         outputfile.write(s + "\n")
     except:
         continue
@@ -747,6 +726,7 @@ for k,v in sender.items():
 outputfile.close()
 
 outputfile1 = open(sys.argv[2] + "recv.output","w")
+outputfile1.write("TRANSACTIONS PROCESSED TILL NOW = " + str(transactions) + "\n")
 
 
 rcnt=-1
@@ -763,7 +743,10 @@ for k,v in receiver.items():
 
         if('dates' in receiver[k]):
             for kk,vv in receiver[k]['dates'].items():
-                s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
+                s = s + str(kk)
+                for kkk,vvv in sorted(vv.items()):
+                    s = s + "," + str(kkk) + ":" +  str(vvv)
+                s = s + ";"
 
         outputfile1.write(s + "\n")
     except:
