@@ -416,7 +416,7 @@ for line in f:
             if(month not in sender[username]['dates']):
                 sender[username]['dates'][month] = {col:0 for col in userfields}
             sender[username]['dates'][month]['P'] = sender[username]['dates'][month]['P'] + 1
-            sender[username]['dates'][month]['T'] = sender[username]['dates'][month]['T'] + 1
+            sender[username]['dates'][month]['TO'] = sender[username]['dates'][month]['TO'] + 1
 
         if(flag == 0 and len(tokens) > 1):
             bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
