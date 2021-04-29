@@ -24,7 +24,7 @@ from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
 MAX_LEN = 10
-BATCH = 500
+BATCH = 50000
 CHECKPOINT_INTERVAL = 2
 
 #===============================================================#
@@ -562,6 +562,10 @@ for line in f:
                          
                         outputfile.write(s + "\n")
                     except:
+                        print(e)
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                        print(exc_type, fname, exc_tb.tb_lineno)
                         continue
 
                 outputfile.close()
@@ -587,6 +591,10 @@ for line in f:
 
                         outputfile1.write(s + "\n")
                     except:
+                        print(e)
+                        exc_type, exc_obj, exc_tb = sys.exc_info()
+                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                        print(exc_type, fname, exc_tb.tb_lineno)
                         continue
        
                 outputfile1.close()
@@ -726,6 +734,10 @@ for k,v in sender.items():
                 s = s + ";"
         outputfile.write(s + "\n")
     except:
+        print(e)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
         continue
 
 outputfile.close()
@@ -755,6 +767,10 @@ for k,v in receiver.items():
 
         outputfile1.write(s + "\n")
     except:
+        print(e)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
         continue
 
 outputfile1.close()
