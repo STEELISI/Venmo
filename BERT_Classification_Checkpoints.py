@@ -67,7 +67,7 @@ phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\
 #acnt = re.compile("( id \d)|(password|passwd|paswd|pswd|pswrd|pwd|code)(:| is)|username:|(username|user name)(|s) |id:")
 acnt = re.compile("((password|passwd|paswd|pswd|pswrd|pwd|code|username|user name|userid|user id|: password )(:| is |: | : | to (my|his|her|their| the) |\? | \? |! |!! )([a-zA-Z0-9$#~!@%^&*]+))|((([a-zA-Z0-9$#~!@%^&*]+) is ((my|his|her|their| the) (password|passwd|paswd|pswd|pswrd|pwd|code|username|user name|userid|user id))))")
 #street = re.compile("\d+[ ](?:[A-Za-z0-9.-]+[ ]?)+(?:Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St)\.?")
-adr = re.compile("( (Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St|Way)(,|.| ))|( (AL|AK|AS|AZ|AR|CA|CO|CT|DE|DC|FM|FL|GA|GU|HI|ID|IL|IN|IA|KS|KY|LA|ME|MH|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|MP|OH|OK|OR|PW|PA|PR|RI|SC|SD|TN|TX|UT|VT|VI|VA|WA|WV|WI|WY) \b\d{5}(?:-\d{4})?\b)")
+adr = re.compile("( (avenue|lane|road|boulevard|drive|street|ave|dr|rd|blvd|ln|st|way)(,|.| ))|( (al|ak|as|az|ar|ca|co|ct|de|dc|fm|fl|ga|gu|hi|id|il|in|ia|ks|ky|la|me|mh|md|ma|mi|mn|ms|mo|mt|ne|nv|nh|nj|nm|ny|nc|nd|mp|oh|ok|or|pw|pa|pr|ri|sc|sd|tn|tx|ut|vt|vi|va|wa|wv|wi|wy) \b\d{5}(?:-\d{4})?\b)")
 
 #===============================================================#
 
@@ -381,7 +381,7 @@ for line in f:
                 date_personal_stat[date[0]]['I'] = date_personal_stat[date[0]]['I'] + 1
                 sender[username]['dates'][month]['I'] = sender[username]['dates'][month]['I'] + 1
 
-            
+            print(note)            
             if(contains_address(note)):
                 per_flag = 1
                 overlap = overlap + 1
