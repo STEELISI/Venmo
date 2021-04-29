@@ -25,7 +25,7 @@ from tensorflow.keras.layers import Dense, Flatten
 #===============================================================#
 MAX_LEN = 10
 BATCH = 50000
-CHECKPOINT_INTERVAL = 4
+CHECKPOINT_INTERVAL = 5
 
 #===============================================================#
 current = 0
