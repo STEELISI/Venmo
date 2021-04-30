@@ -24,8 +24,8 @@ from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
 MAX_LEN = 10
-BATCH = 50000
-CHECKPOINT_INTERVAL = 5
+BATCH = 500
+CHECKPOINT_INTERVAL = 4
 
 #===============================================================#
 current = 0
@@ -561,10 +561,6 @@ for line in f:
                          
                         outputfile.write(s + "\n")
                     except:
-                        print(e)
-                        exc_type, exc_obj, exc_tb = sys.exc_info()
-                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                        print(exc_type, fname, exc_tb.tb_lineno)
                         continue
 
                 outputfile.close()
@@ -584,16 +580,13 @@ for line in f:
 
                         if('dates' in receiver[k]):
                             for kk,vv in receiver[k]['dates'].items():
+                                s = s + str(kk)
                                 for kkk,vvv in sorted(vv.items()):
                                     s = s + "," + str(kkk) + ":" +  str(vvv)
                                 s = s + ";"
 
                         outputfile1.write(s + "\n")
                     except:
-                        print(e)
-                        exc_type, exc_obj, exc_tb = sys.exc_info()
-                        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                        print(exc_type, fname, exc_tb.tb_lineno)
                         continue
        
                 outputfile1.close()
@@ -733,10 +726,6 @@ for k,v in sender.items():
                 s = s + ";"
         outputfile.write(s + "\n")
     except:
-        print(e)
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(exc_type, fname, exc_tb.tb_lineno)
         continue
 
 outputfile.close()
@@ -766,10 +755,6 @@ for k,v in receiver.items():
 
         outputfile1.write(s + "\n")
     except:
-        print(e)
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(exc_type, fname, exc_tb.tb_lineno)
         continue
 
 outputfile1.close()
