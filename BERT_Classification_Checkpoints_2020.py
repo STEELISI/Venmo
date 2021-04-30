@@ -6,6 +6,7 @@
 # python3 BERT_Classification_Checkpoints.py /Users/rajattan/venmo/dummy.json ./transactions_date_wise.txt   #
 #============================================================================================================#
 import re
+import os
 import sys
 import csv
 import time
@@ -26,7 +27,6 @@ from tensorflow.keras.layers import Dense, Flatten
 #===============================================================#
 MAX_LEN = 10
 BATCH = 50000
-INTERMEDIADTE = 10
 CHECKPOINT_INTERVAL = 4
 CHUNKSIZE = 1000
 
@@ -59,7 +59,6 @@ DATECAT_FILE = "checkpoint_2020/date_category_stat.txt"
 DATEPER_FILE = "checkpoint_2020/date_personal_stat.txt"
 PATH_TO_KEYWORDS_LIST = "data/UNIQ_KEYWORDS_LIST.txt"
 #===============================================================#
-
 pattern = re.compile(r"(.)\1{2,}")
 pattern_rm1 = re.compile(r"(.)\1{1,}")
 possible_personal = re.compile("\d")
@@ -70,7 +69,7 @@ phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\
 #acnt = re.compile("( id \d)|(password|passwd|paswd|pswd|pswrd|pwd|code)(:| is)|username:|(username|user name)(|s) |id:")
 acnt = re.compile("((password|passwd|paswd|pswd|pswrd|pwd|code|username|user name|userid|user id|: password )(:| is |: | : | to (my|his|her|their| the) |\? | \? |! |!! )([a-zA-Z0-9$#~!@%^&*]+))|((([a-zA-Z0-9$#~!@%^&*]+) is ((my|his|her|their| the) (password|passwd|paswd|pswd|pswrd|pwd|code|username|user name|userid|user id))))")
 #street = re.compile("\d+[ ](?:[A-Za-z0-9.-]+[ ]?)+(?:Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St)\.?")
-adr = re.compile("( (Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St|Way)(,|.| ))|( (AL|AK|AS|AZ|AR|CA|CO|CT|DE|DC|FM|FL|GA|GU|HI|ID|IL|IN|IA|KS|KY|LA|ME|MH|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|MP|OH|OK|OR|PW|PA|PR|RI|SC|SD|TN|TX|UT|VT|VI|VA|WA|WV|WI|WY) \b\d{5}(?:-\d{4})?\b)")
+adr = re.compile("( (avenue|lane|road|boulevard|drive|street|ave|dr|rd|blvd|ln|st|way)(,|\.| ))|( (al|ak|as|az|ar|ca|co|ct|de|dc|fm|fl|ga|gu|hi|id|il|in|ia|ks|ky|la|me|mh|md|ma|mi|mn|ms|mo|mt|ne|nv|nh|nj|nm|ny|nc|nd|mp|oh|ok|or|pw|pa|pr|ri|sc|sd|tn|tx|ut|vt|vi|va|wa|wv|wi|wy) \b\d{5}(?:-\d{4})?\b)")
 
 #===============================================================#
 
@@ -149,13 +148,14 @@ with open(PATH_TO_STOPWORDS_LIST,'r') as fp:
 
 #===============================================================#
 #c0 = c1 = [' '] * BATCH
+
 cols_name = ['Date', 'Note','myr','uname','tuname','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 label_cols = cols_name[5:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
 sens_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','T']
 
-personal_cols = ['A','E','I','P','T']
-userfields = ['S','P','T','A']
-
+# Account, Email, Invoice, Personal, Address, Total, Overlap
+personal_cols = ['AC','E','I','PH','AD','TO','O']
+userfields = [ 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','AC','E','I','PH','AD','TO','O','S','P','T','A']
 
 bert_model_name = 'bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(bert_model_name, do_lower_case=True)
@@ -314,8 +314,6 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
             origtokens = nltk.word_tokenize(note)
             tokens_partial = preprocessing(origtokens)
             tokens = preprocessing_cntd(tokens_partial)
-
-
         
             if(username not in sender):
                 sender[username] = {}
@@ -351,42 +349,52 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
             if(date[0] not in date_personal_stat):
                 date_personal_stat[date[0]] = {col:0 for col in personal_cols}
             per_flag = 0
-
+            overlap = 0
 
             if(possible_personal.search(note) or "@" in note or "#" in note):
                 note = note.lower()
                 if(contains_phn(note)):
                     per_flag = 1
-                    if('P' not in date_personal_stat[date[0]]):
-                        date_personal_stat[date[0]]['P'] = 0
-                    date_personal_stat[date[0]]['P'] = date_personal_stat[date[0]]['P'] + 1
+                    overlap = overlap + 1
+                    if('PH' not in date_personal_stat[date[0]]):
+                        date_personal_stat[date[0]]['PH'] = 0
+                    date_personal_stat[date[0]]['PH'] = date_personal_stat[date[0]]['PH'] + 1
+                    sender[username]['dates'][month]['PH'] = sender[username]['dates'][month]['PH'] + 1
 
                 if(contains_email(note)):
                     per_flag = 1
+                    overlap = overlap + 1
                     if('E' not in date_personal_stat[date[0]]):
                         date_personal_stat[date[0]]['E'] = 0
                     date_personal_stat[date[0]]['E'] = date_personal_stat[date[0]]['E'] + 1
+                    sender[username]['dates'][month]['E'] = sender[username]['dates'][month]['E'] + 1
+
 
                 if(contains_invoice(note)):
                     per_flag = 1
+                    overlap =  overlap + 1
                     if('I' not in date_personal_stat[date[0]]):
                         date_personal_stat[date[0]]['I'] = 0
                     date_personal_stat[date[0]]['I'] = date_personal_stat[date[0]]['I'] + 1
+                    sender[username]['dates'][month]['I'] = sender[username]['dates'][month]['I'] + 1
 
-            
                 if(contains_address(note)):
                     per_flag = 1
-                    if('L' not in date_personal_stat[date[0]]):
-                        date_personal_stat[date[0]]['L'] = 0
-                    date_personal_stat[date[0]]['L'] = date_personal_stat[date[0]]['L'] + 1
+                    overlap = overlap + 1
+                    if('AD' not in date_personal_stat[date[0]]):
+                        date_personal_stat[date[0]]['AD'] = 0
+                    date_personal_stat[date[0]]['AD'] = date_personal_stat[date[0]]['AD'] + 1
+                    sender[username]['dates'][month]['AD'] = sender[username]['dates'][month]['AD'] + 1
 
             if(contains_acc(note)):
                 per_flag = 1
-                if('A' not in date_personal_stat[date[0]]):
-                    date_personal_stat[date[0]]['A'] = 0
-                date_personal_stat[date[0]]['A'] = date_personal_stat[date[0]]['A'] + 1
+                overlap = overlap + 1
+                if('AC' not in date_personal_stat[date[0]]):
+                    date_personal_stat[date[0]]['AC'] = 0
+                date_personal_stat[date[0]]['AC'] = date_personal_stat[date[0]]['AC'] + 1
+                sender[username]['dates'][month]['AC'] = sender[username]['dates'][month]['AC'] + 1
 
-            
+
             note = ' '.join(tokens).strip()
 
             if(len(note) == 0 or  english_ch.search(note) == None):# or (not(detect(note) == "en"))):
@@ -398,17 +406,17 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                     flag = 1
                     break 
 
+
             if(per_flag == 1):
-                date_personal_stat[date[0]]['T'] = date_personal_stat[date[0]]['T'] + 1
+                date_personal_stat[date[0]]['TO'] = date_personal_stat[date[0]]['TO'] + 1
+                if(overlap > 1):
+                    date_personal_stat[date[0]]['O'] = date_personal_stat[date[0]]['O'] + 1
                 if(month not in sender[username]['dates']):
                     sender[username]['dates'][month] = {col:0 for col in userfields}
                 sender[username]['dates'][month]['P'] = sender[username]['dates'][month]['P'] + 1
-                sender[username]['dates'][month]['T'] = sender[username]['dates'][month]['T'] + 1
-                if(month not in receiver[tusername]['dates']):
-                    receiver[tusername]['dates'][month] = {col:0 for col in userfields}
-                receiver[tusername]['dates'][month]['P'] = receiver[tusername]['dates'][month]['P'] + 1
-                receiver[tusername]['dates'][month]['T'] = receiver[tusername]['dates'][month]['T'] + 1
-            
+                sender[username]['dates'][month]['TO'] = sender[username]['dates'][month]['TO'] + 1
+
+
 
             if(flag == 0 and len(tokens) > 1):
                 bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
@@ -467,7 +475,6 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                 for index, row in test_preds.iterrows():
                     #update(row)
                     sen_flag = 1
-                    per_flag = 1
                     date = str(row['Date'])
                     un = str(row['uname'])
                     tun = str(row['tuname'])
@@ -479,36 +486,27 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                         if row[col] == 0:
                             continue
                         date_category_stat[date][col] = date_category_stat[date][col] + 1
-                        if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
-                            date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
-                            per_flag = 0
-                            if(mon not in sender[un]['dates']):
-                                sender[un]['dates'][mon] = {col:0 for col in userfields}
-                            sender[un]['dates'][mon]['P'] = sender[un]['dates'][mon]['P'] + 1
-                            sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-                            if(date not in receiver[tun]['dates']):
-                                receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                            receiver[tun]['dates'][mon]['P'] = receiver[tun]['dates'][mon]['P'] + 1
-                            receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
 
 
+                        if(mon not in sender[un]['dates']):
+                            sender[un]['dates'][mon] = {col:0 for col in userfields}
+                        if(mon not in receiver[tun]['dates']):
+                            receiver[tun]['dates'][mon] = {col:0 for col in userfields}
+                        sender[un]['dates'][mon][col] = sender[un]['dates'][mon][col] + 1
+                        receiver[tun]['dates'][mon][col] = receiver[tun]['dates'][mon][col] + 1
 
-                        elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
+                        if(sen_flag):
                             date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
                             sen_flag = 0
-                            if(mon not in sender[un]['dates']):
-                                sender[un]['dates'][mon] = {col:0 for col in userfields}
                             sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
                             sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-
-                            if(mon not in receiver[tun]['dates']):
-                                receiver[tun]['dates'][mon] = {col:0 for col in userfields}
                             receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
                             receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
 
 
-                if(numbatch % CHECKPOINT_INTERVAL == 0 or INTERMEDIADTE%10 == 0):
-                    INTERMEDIADTE = INTERMEDIADTE + 1
+
+
+                if(numbatch % CHECKPOINT_INTERVAL == 0):
                     strcurrent = "." + str(current)
                     datecat = DATECAT_FILE
                     dateper  = DATEPER_FILE
@@ -549,13 +547,17 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
 
                             if('dates' in sender[k]):
                                 for kk,vv in sender[k]['dates'].items():
-                                    s = s + str(kk) + "," +  str(sender[k]['dates'][kk]['S']) + "," + str(sender[k]['dates'][kk]['P']) + "," + str(sender[k]['dates'][kk]['T']) + "," + str(sender[k]['dates'][kk]['A']) + ";"
-
+                                    s = s + str(kk)
+                                    for kkk,vvv in sorted(vv.items()):
+                                        s = s + "," + str(kkk) + ":" +  str(vvv)
+                                    s = s + ";"
                             s = s + "|"
                             if(k in receiver and 'dates' in receiver[k]):
                                 for kk,vv in receiver[k]['dates'].items():
-                                    s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
-
+                                    s = s + str(kk)
+                                    for kkk,vvv in sorted(vv.items()):
+                                        s = s + "," + str(kkk) + ":" +  str(vvv)
+                                    s = s + ";"
 
                             outputfile.write(s + "\n")
                         except:
@@ -578,7 +580,10 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
 
                             if('dates' in receiver[k]):
                                 for kk,vv in receiver[k]['dates'].items():
-                                    s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
+                                    s = s + str(kk)
+                                    for kkk,vvv in sorted(vv.items()):
+                                        s = s + "," + str(kkk) + ":" +  str(vvv)
+                                    s = s + ";"
 
                             outputfile1.write(s + "\n")
                         except:
@@ -593,10 +598,14 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                  
             cnt = cnt + 1
 
+        except Exception as e:
+            print(e)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
+            continue
 
-        except:
-            continue        
-    #f.close()
+
 
 # Last batch
 if cnt != 0:
@@ -633,50 +642,37 @@ if cnt != 0:
         binary_predictions = np.where(predictions > 0.5, 1, 0)
         test_preds.loc[start:end, label_cols] = binary_predictions
     # update stat
-        
+
+
     for index, row in test_preds.iterrows():
-        try:
-            sen_flag = 1
-            per_flag = 1
-            date = str(row['Date'])
-            un = str(row['uname'])
-            tun = str(row['tuname'])
-            mon = str(row['myr'])
-            if date not in date_category_stat:
-                date_category_stat[date] = {col:0 for col in sens_cols}
-            for col in label_cols:
-                if row[col] == 0:
-                    continue
-                date_category_stat[date][col] = date_category_stat[date][col] + 1
-                if(per_flag and (col == 'RELATION' or col == 'LOCATION')):
-                    date_personal_stat[date]['T'] = date_personal_stat[date]['T'] + 1
-                    per_flag = 0
-                    if(mon not in sender[un]['dates']):
-                        sender[un]['dates'][mon] = {col:0 for col in userfields}
-                    sender[un]['dates'][mon]['P'] = sender[un]['dates'][mon]['P'] + 1
-                    sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-                    if(mon not in receiver[tun]['dates']):
-                        receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                    receiver[tun]['dates'][mon]['P'] = receiver[tun]['dates'][mon]['P'] + 1
-                    receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
+        sen_flag = 1
+        date = str(row['Date'])
+        un = str(row['uname'])
+        tun = str(row['tuname'])
+        mon = str(row['myr'])
+
+        if date not in date_category_stat:
+            date_category_stat[date] = {col:0 for col in sens_cols}
+        for col in label_cols:
+            if row[col] == 0:
+                continue
+            date_category_stat[date][col] = date_category_stat[date][col] + 1
+
+            if(mon not in sender[un]['dates']):
+                sender[un]['dates'][mon] = {col:0 for col in userfields}
+            if(mon not in receiver[tun]['dates']):
+                receiver[tun]['dates'][mon] = {col:0 for col in userfields}
+            sender[un]['dates'][mon][col] = sender[un]['dates'][mon][col] + 1
+            receiver[tun]['dates'][mon][col] = receiver[tun]['dates'][mon][col] + 1
 
 
-                elif(sen_flag and not(col == 'RELATION' or col == 'LOCATION')):
-                    date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
-                    sen_flag = 0
-
-                    if(mon not in sender[un]['dates']):
-                        sender[un]['dates'][mon] = {col:0 for col in userfields}
-                    sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
-                    sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-
-                    if(mon not in receiver[tun]['dates']):
-                        receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                    receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
-                    receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
-        except:
-            continue
-
+            if(sen_flag):
+                date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
+                sen_flag = 0
+                sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
+                sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
+                receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
+                receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
 
 strcurrent = "." + str(transactions)
 datecat = DATECAT_FILE
@@ -710,6 +706,7 @@ df_stat.to_csv(sys.argv[2] + "per.output", index=False)
 outputfile = open(sys.argv[2],"w")
 outputfile.write("TRANSACTIONS PROCESSED TILL NOW = " + str(current) + "\n")
 scnt=-1
+
 for k,v in sender.items():
     if(v is None):
         continue
@@ -723,14 +720,18 @@ for k,v in sender.items():
 
         if('dates' in sender[k]):
             for kk,vv in sender[k]['dates'].items():
-                s = s + str(kk) + "," +  str(sender[k]['dates'][kk]['S']) + "," + str(sender[k]['dates'][kk]['P']) + "," + str(sender[k]['dates'][kk]['T']) + "," + str(sender[k]['dates'][kk]['A']) + ";"
-        
+                s = s + str(kk)
+                for kkk,vvv in sorted(vv.items()):
+                    s = s + "," + str(kkk) + ":" +  str(vvv)
+                s = s + ";"
+
         s = s + "|"
         if(k in receiver and 'dates' in receiver[k]):
             for kk,vv in receiver[k]['dates'].items():
-                s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
-    
-        
+                s = s + str(kk)
+                for kkk,vvv in sorted(vv.items()):
+                    s = s + "," + str(kkk) + ":" +  str(vvv)
+                s = s + ";"
         outputfile.write(s + "\n")
     except:
         continue
@@ -738,9 +739,10 @@ for k,v in sender.items():
 outputfile.close()
 
 outputfile1 = open(sys.argv[2] + "recv.output","w")
-
+outputfile1.write("TRANSACTIONS PROCESSED TILL NOW = " + str(transactions) + "\n")
 
 rcnt=-1
+
 for k,v in receiver.items():
     if(v is None or k in sender):
         continue
@@ -754,7 +756,10 @@ for k,v in receiver.items():
 
         if('dates' in receiver[k]):
             for kk,vv in receiver[k]['dates'].items():
-                s = s + str(kk) + "," +  str(receiver[k]['dates'][kk]['S']) + "," + str(receiver[k]['dates'][kk]['P']) + "," + str(receiver[k]['dates'][kk]['T']) + "," + str(receiver[k]['dates'][kk]['A']) + ";"
+                s = s + str(kk)
+                for kkk,vvv in sorted(vv.items()):
+                    s = s + "," + str(kkk) + ":" +  str(vvv)
+                s = s + ";"
 
         outputfile1.write(s + "\n")
     except:
