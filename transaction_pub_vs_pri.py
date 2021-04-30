@@ -1,6 +1,6 @@
 #====================================================================================================#
 #*******************************   HOW TO RUN?  **************************************************** #
-# python3 datewise_transactions_count.py <path to the input json file>  <path to the output file>    #
+# python3 transaction_pub_vs_pri.py <path to the input json file>  <path to the output file>         #
 #*************************************************************************************************** #
 # Example:                                                                                           #
 #python3 transaction_pub_vs_pri.py /Users/rajattan/venmo/dummy.json ./transactions_date_wise.txt     #
