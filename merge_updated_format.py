@@ -62,9 +62,9 @@ for f in files:
         with open(join(read_path, f), "rb") as myFile:
             sender_dict = pickle.load(myFile)
         for username in sender_dict:
-            if 'joined' not in sender_dict[username]:
-                continue
-            joined = sender_dict[username]['joined']
+            joined = ""
+            if 'joined' in sender_dict[username]:
+                joined = sender_dict[username]['joined']
             dates = sender_dict[username]['dates']
             updateStat(username, joined, dates, {})
     if f[:13] == 'receiver.txt.': # 'receiver.txt.xxxx'
@@ -72,9 +72,9 @@ for f in files:
         with open(join(read_path, f), "rb") as myFile:
             receiver_dict = pickle.load(myFile)
         for username in receiver_dict:
-            if 'joined' not in receiver_dict[username]:
-                continue
-            joined = receiver_dict[username]['joined']
+            joined = ""
+            if 'joined' in receiver_dict[username]:
+                joined = receiver_dict[username]['joined']
             dates = receiver_dict[username]['dates']
             updateStat(username, joined, {}, dates)
 
