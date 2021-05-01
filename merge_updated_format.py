@@ -1,3 +1,4 @@
+import os
 from os import listdir
 from os.path import isfile, join
 import sys
@@ -42,6 +43,7 @@ def updateStat(username, joined, sender, receiver):
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         print(exc_type, fname, exc_tb.tb_lineno)
+        continue
 
 
 #===============================================================#
@@ -52,6 +54,9 @@ files = [f for f in listdir(read_path) if isfile(join(read_path, f))]
 for f in files:
     print(f)
 
+print("==============================")
+print(" PROCESSING INFORMATION       ")
+print("==============================")
 for f in files:
     if f[:11] == 'sender.txt.': # 'sender.txt.xxxx'
         print(f)
@@ -113,6 +118,7 @@ for k,v in sender_final_stat.items():
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         print(exc_type, fname, exc_tb.tb_lineno)
+        continue
 outputfile.close()
 
 ##############
@@ -146,6 +152,7 @@ for k,v in receiver_final_stat.items():
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         print(exc_type, fname, exc_tb.tb_lineno)
+        continue
 
 
 outputfile1.close()
