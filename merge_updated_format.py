@@ -19,23 +19,29 @@ read_path = sys.argv[1]	# i.e. '/venmo/read/'
 write_path = sys.argv[2] # i.e. '/venmo/write/'
 
 def updateStat(username, joined, sender, receiver):
-    if sender:
-        if username not in sender_final_stat:
-            sender_final_stat[username] = {'joined': joined, 'dates': {}}
-        for dt in sender: #date (year-month)
-            if dt not in sender_final_stat[username]['dates']:
-                sender_final_stat[username]['dates'][dt] = {col:0 for col in userfields}
-            for k in sender[dt]: #'S': sensitive, 'P': personal, 'T': total of senstive + personal, 'A': total notes
-                sender_final_stat[username]['dates'][dt][k] += sender[dt][k]
+    try:
+        if sender:
+            if username not in sender_final_stat:
+                sender_final_stat[username] = {'joined': joined, 'dates': {}}
+            for dt in sender: #date (year-month)
+                if dt not in sender_final_stat[username]['dates']:
+                    sender_final_stat[username]['dates'][dt] = {col:0 for col in userfields}
+                for k in sender[dt]: #'S': sensitive, 'P': personal, 'T': total of senstive + personal, 'A': total notes
+                    sender_final_stat[username]['dates'][dt][k] += sender[dt][k]
 
-    if receiver:
-        if username not in receiver_final_stat:
-            receiver_final_stat[username] = {'joined': joined, 'dates': {}}
-        for dt in receiver: #date (year-month)
-            if dt not in receiver_final_stat[username]['dates']:
-                receiver_final_stat[username]['dates'][dt] = {col:0 for col in userfields}
-            for k in receiver[dt]: #'S': sensitive, 'P': personal, 'T': total of senstive + personal, 'A': total notes
-                receiver_final_stat[username]['dates'][dt][k] += receiver[dt][k]
+        if receiver:
+            if username not in receiver_final_stat:
+                receiver_final_stat[username] = {'joined': joined, 'dates': {}}
+            for dt in receiver: #date (year-month)
+                if dt not in receiver_final_stat[username]['dates']:
+                    receiver_final_stat[username]['dates'][dt] = {col:0 for col in userfields}
+                for k in receiver[dt]: #'S': sensitive, 'P': personal, 'T': total of senstive + personal, 'A': total notes
+                    receiver_final_stat[username]['dates'][dt][k] += receiver[dt][k]
+    except Exception as e:
+        print(e)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
 
 
 #===============================================================#
@@ -43,9 +49,12 @@ def updateStat(username, joined, sender, receiver):
 #===============================================================#
 
 files = [f for f in listdir(read_path) if isfile(join(read_path, f))]
+for f in files:
+    print(f)
 
 for f in files:
     if f[:11] == 'sender.txt.': # 'sender.txt.xxxx'
+        print(f)
         with open(join(read_path, f), "rb") as myFile:
             sender_dict = pickle.load(myFile)
         for username in sender_dict:
@@ -55,6 +64,7 @@ for f in files:
             dates = sender_dict[username]['dates']
             updateStat(username, joined, dates, {})
     if f[:13] == 'receiver.txt.': # 'receiver.txt.xxxx'
+        print(f)
         with open(join(read_path, f), "rb") as myFile:
             receiver_dict = pickle.load(myFile)
         for username in receiver_dict:
@@ -92,14 +102,17 @@ for k,v in sender_final_stat.items():
 
         s = s + "|"
         if(k in receiver_final_stat and 'dates' in receiver_final_stat[k]):
-            for kk,vv in receiver[k]['dates'].items():
+            for kk,vv in receiver_final_stat[k]['dates'].items():
                 s = s + str(kk)
                 for kkk,vvv in sorted(vv.items()):
                     s = s + "," + str(kkk) + ":" +  str(vvv)
                 s = s + ";"
         outputfile.write(s + "\n")
-    except:
-        continue
+    except Exception as e:
+        print(e)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
 outputfile.close()
 
 ##############
@@ -127,8 +140,13 @@ for k,v in receiver_final_stat.items():
                 s = s + ";"
 
         outputfile1.write(s + "\n")
-    except:
-        continue
+
+    except Exception as e:
+        print(e)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
+
 
 outputfile1.close()
 ##############
