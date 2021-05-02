@@ -101,7 +101,7 @@ for k,v in sender_final_stat.items():
             for kk,vv in sender_final_stat[k]['dates'].items():
                 s = s + str(kk)
                 for kkk,vvv in sorted(vv.items()):
-                    s = s + "," + str(kkk) + ":" +  str(vvv)
+                    s = s + "," +  str(vvv)
                 s = s + ";"
 
         s = s + "|"
@@ -109,7 +109,7 @@ for k,v in sender_final_stat.items():
             for kk,vv in receiver_final_stat[k]['dates'].items():
                 s = s + str(kk)
                 for kkk,vvv in sorted(vv.items()):
-                    s = s + "," + str(kkk) + ":" +  str(vvv)
+                    s = s + "," +  str(vvv)
                 s = s + ";"
         outputfile.write(s + "\n")
     except Exception as e:
@@ -141,7 +141,7 @@ for k,v in receiver_final_stat.items():
             for kk,vv in receiver_final_stat[k]['dates'].items():
                 s = s + str(kk)
                 for kkk,vvv in sorted(vv.items()):
-                    s = s + "," + str(kkk) + ":" +  str(vvv)
+                    s = s + "," +  str(vvv)
                 s = s + ";"
 
         outputfile1.write(s + "\n")
