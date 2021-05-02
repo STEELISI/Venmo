@@ -72,7 +72,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
             date_personal_stat = pickle.load(myFile)
 
 
-        if(len(date_category_stat) == 0 or len(date_category_stat) == 0): # or len(sender) == 0 or len(receiver) == 0):
+        if(len(date_personal_stat) == 0): # or len(sender) == 0 or len(receiver) == 0):
             print("===================================================================")
             print("****** COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.******")
             print("***                YOU NEED TO RECOMPUTE THINGS AGAIN.          ***")
@@ -258,7 +258,8 @@ for line in f:
         tokens = [t for t in tokens if len(t) != 0]
 
         ## LENGTH ##
-        length = len(tokens)
+        words = remove_special(tokens)
+        length = len(words)
         sender[username]['dates'][month]['AL'] = int((((sender[username]['dates'][month]['AL'] * (sender[username]['dates'][month]['A'] - 1)) + length)/sender[username]['dates'][month]['A']))
         date_personal_stat[date[0]]['AL'] = int((((date_personal_stat[date[0]]['AL'] * (date_personal_stat[date[0]]['A'] - 1)) + length)/date_personal_stat[date[0]]['A']))
         receiver[tusername]['dates'][month]['AL'] = int((((receiver[tusername]['dates'][month]['AL'] * (receiver[tusername]['dates'][month]['A']  - 1)) + length)/receiver[tusername]['dates'][month]['A']))      
@@ -334,12 +335,10 @@ for line in f:
                 cryptic = 1    
        
         if(cryptic == 1):
-            print("C",note)
             sender[username]['dates'][month]['C'] += 1
             receiver[tusername]['dates'][month]['C'] += 1
             date_personal_stat[date[0]]['C'] += 1         
         else:
-            print("NC",note)
             sender[username]['dates'][month]['NC'] += 1
             receiver[tusername]['dates'][month]['NC'] += 1
             date_personal_stat[date[0]]['NC'] += 1
@@ -427,13 +426,8 @@ for line in f:
         cnt = cnt + 1
 
 
-    except Exception as e:
-        print(e)
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(exc_type, fname, exc_tb.tb_lineno)
-    #except:
-    #    continue        
+    except:
+        continue        
 f.close()
 
 
