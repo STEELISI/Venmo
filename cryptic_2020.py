@@ -28,8 +28,8 @@ from transformers import BertTokenizer
 from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
-BATCH = 500
-CHUNKSIZE = 1000
+BATCH = 5000000
+CHUNKSIZE = 10000
 
 #===============================================================#
 current = 0
