@@ -306,7 +306,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
             tusername = row[6]
 
             timestampp = str(row[2])
-            your_dt = datetime.datetime.fromtimestamp(int(timestampp))
+            your_dt = datetime.datetime.fromtimestamp(float(timestampp))
             day = your_dt.strftime("%Y-%m-%dT")
             date = day.split("T")
             month = date[0][2:7]
