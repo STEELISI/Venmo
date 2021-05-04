@@ -10,31 +10,45 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from nltk import tokenize
-from langdetect import detect
-from transformers import TFBertModel
-from transformers import BertTokenizer
-from tensorflow.keras.layers import Dense, Flatten
 
 
+
+#===============================================================#
+CHECKPOINT_INTERVAL = 10000000
+#===============================================================#
 PATH_TO_AA_LIST = "data/AA.txt"
 PATH_TO_FRATERNITY_LIST = "data/FRATERNITY.txt"
 PATH_TO_GAMBLING_LIST = "data/GAMBLING.txt"
 PATH_TO_ADULT_LIST = "data/ADULT.txt"
 PATH_TO_DRUGS_LIST = "data/DRUGS.txt"
 PATH_TO_ALCOHOLICS_LIST = "data/ALCOHOLICS.txt"
-
+PATH_TO_STOPWORDS_LIST = "data/STOPWORDS.txt"
+#===============================================================#
+USERS_FILE = "checkpoint_part1/PARTIAL_OUTPUT.txt"
+CHECKPOINT_FILE = "checkpoint_part1/current.txt"
+CHECKPOINT_DIR = "checkpoint_part1/"
+#===============================================================#
+if(len(sys.argv) != 3 or not (os.path.exists(CHECKPOINT_DIR))):
+    print("==========================================================================")
+    print("SORRY!! Please provide the path to the INPUT json file and the OUTPUT file")
+    print("==========================================================================")
+    print("Example: python3 Filter_Group_Users.py ./dummy.json ./output.txt          ")
+    print("==========================================================================")
+    sys.exit()
+#===============================================================#
 ## AA : AA 
 ## F : Fraternity
 ## G : Gambling
 ## A : Adult
 ## D : Drug
 ## AL : Alcohol
-
+#===============================================================#
 
 ##Special checks AA
 ##FRATERNITY Camel case or UPPER Case
 ##BET should not be in contain
 ## 
+#===============================================================#
 
 aa=set()
 fraternity = set()
@@ -46,28 +60,40 @@ alcoholics = set()
 
 filter_users = {}
 
+stopwords = set()
+
+
 current = 0
 numbatch = 0
 transactions = 0
 
 pattern = re.compile(r"(.)\1{2,}")
 #===============================================================#
-if(len(sys.argv) != 2):
-    print("==========================================================================")
-    print("SORRY!! Please provide the path to the INPUT json file and the OUTPUT file")
-    print("==========================================================================")
-    print("Example: python3 BERT_Classification_script.py ./dummy.json ./output.txt  ")
-    print("==========================================================================")
-    sys.exit()
-
 f = open(sys.argv[1])
 
+if(os.path.exists(CHECKPOINT_FILE)):
+    with open(CHECKPOINT_FILE, "rb") as myFile:
+        current = pickle.load(myFile)
+    print("RESUMING FROM " + str(current))
+    if(current > 0):
+        with open(USERS_FILE, "rb") as myFile:
+            filter_users = pickle.load(myFile)
 
 
+        if(len(filter_users) == 0):
+            print("===================================================================")
+            print("****** COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.******")
+            print("***                YOU NEED TO RECOMPUTE THINGS AGAIN.          ***")
+            print("***    PLEASE remove the file checkpoint/current.txt and re-run.***")
+            print("===================================================================")
+            sys.exit()
+        else:
+            print("=========================================================")
+            print(" CHECKPOINT FILES AND DICTIONARIES LOADED SUCCESSFULLY!!!")
+            print("=========================================================")
 
 
-
-
+#===============================================================#
 """
 Convert all letters to lower or upper case (common : lower case)
 """
@@ -83,6 +109,32 @@ Eliminate all continuous duplicate characters more than twice
 def reduce_lengthening(tokens):
     return [pattern.sub(r"\1\1", token) for token in tokens]
 #===============================================================#
+"""
+Remove blancs on words
+"""
+def remove_blanc(tokens):
+    return [token.strip() for token in tokens]
+#===============================================================#
+with open(PATH_TO_STOPWORDS_LIST,'r') as fp:
+    for l in fp:
+        stopwords.add(l.strip())
+
+
+#===============================================================#
+"""
+Stopwords Removal
+"""
+def remove_stopwords(tokens):
+    return [token for token in tokens if token not in stopwords]
+#===============================================================#
+
+"""
+Remove all digits and special characters
+"""
+def remove_special(tokens):
+  return [re.sub("(\\d|\\W)+", " ", token) for token in tokens]
+#===============================================================#
+
 
 
 with open(PATH_TO_GAMBLING_LIST,'r') as fp:
@@ -122,7 +174,10 @@ with open(PATH_TO_FRATERNITY_LIST,'r') as fp:
 Preprocessing Work 
 """
 def preprocessing(origtokens):
-    tokens = reduce_lengthening(origtokens)
+    tokens = remove_blanc(origtokens)
+    tokens = remove_stopwords(tokens)
+    tokens = remove_special(tokens)
+    tokens = reduce_lengthening(tokens)
     return tokens
 #===============================================================#
 
@@ -132,6 +187,23 @@ for line in f:
     data = json.loads(line)
     transactions = transactions + 1
     try:
+        if(transactions < current):
+            continue
+
+        if((transactions % CHECKPOINT_INTERVAL) == 0):
+            current = transactions
+
+            with open(CHECKPOINT_FILE, "wb") as myFile:
+                pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+
+            with open(USERS_FILE, "wb") as myFile:
+                pickle.dump(filter_users, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+
+            outputfile = open(sys.argv[2],"w")
+            outputfile.write("TRANSACTIONS PROCESSED TILL NOW = " + str(current) + "\n")
+            outputfile.write("NUMBER OF POSSIBLE GROUPS FOUND TILL NOW = " + str(len(filter_users)) + "\n")
+            outputfile.close()
+
 
         if(data is None or data['message'] is None):
             continue
@@ -341,4 +413,13 @@ for line in f:
         continue
 f.close()
 
-print(filter_users)
+with open(CHECKPOINT_FILE, "wb") as myFile:
+    pickle.dump(transactions, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+
+with open(USERS_FILE, "wb") as myFile:
+    pickle.dump(filter_users, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+
+outputfile = open(sys.argv[2],"w")
+outputfile.write("TRANSACTIONS PROCESSED = " + str(transactions) + "\n")
+outputfile.write("NUMBER OF POSSIBLE GROUPS FOUND = " + str(len(filter_users)) + "\n")
+outputfile.close()
