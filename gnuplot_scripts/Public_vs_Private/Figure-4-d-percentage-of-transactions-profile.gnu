@@ -11,7 +11,7 @@ set ylabel font ",14"
 set key abov
 
 set term png
-set output 'pub_vs_pri_trans.png'
+set output 'Yearwise_Transactions_pub_vs_pri.png'
 set grid
 set xtics rotate by -45
 set xlabel "Year"
