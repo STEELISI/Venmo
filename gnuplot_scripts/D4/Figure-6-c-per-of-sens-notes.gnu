@@ -11,7 +11,7 @@ set ylabel font ",13"
 set key abov
 
 set term png
-set output 'sensitive.png'
+set output 'percentage.png'
 set grid
 set xtics rotate by -45
 set xlabel "Each month in the dataset"
