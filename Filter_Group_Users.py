@@ -314,7 +314,7 @@ for line in f:
 
 
         for l in aa:
-            if( name in l):
+            if( l in name):
                 if(username not in filter_users):
                     filter_users[tusername] = {}
                     filter_users[tusername]['C'] = set()
