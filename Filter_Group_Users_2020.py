@@ -219,20 +219,15 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
 
             if(transactions < current or len(row) != 10):
                 continue
-            username = row[5]
             tusername = row[6]
             name = row[9]
             firstname = lastname = name
-
             ## IDENTIFIED FROM Unames
-            note = str(data['message'])
-       
+            note = row[1] 
             #print(tusername,lastname,firstname,name,note)     
             parts = tusername.split("-")
-     
             flag = 0
             for username in parts:
-         
                 if( username == "AA" or name == "AA" or " AA " in name or name.startswith("AA ")  or name.endswith("AA")):
                     if(username not in filter_users):
                         filter_users[username] = {}
@@ -426,6 +421,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
         except:
             continue
 
+print(filter_users)
 with open(CHECKPOINT_FILE, "wb") as myFile:
     pickle.dump(transactions, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
