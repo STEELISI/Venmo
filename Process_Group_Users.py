@@ -23,8 +23,8 @@ from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
 MAX_LEN = 10
-BATCH = 500
-CHECKPOINT_INTERVAL = 4
+BATCH = 50000
+CHECKPOINT_INTERVAL = 6
 
 #===============================================================#
 current = 0
