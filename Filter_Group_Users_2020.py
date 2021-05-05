@@ -33,7 +33,7 @@ if(len(sys.argv) != 3 or not (os.path.exists(CHECKPOINT_DIR))):
     print("==========================================================================")
     print("SORRY!! Please provide the path to the INPUT json file and the OUTPUT file")
     print("==========================================================================")
-    print("Example: python3 Filter_Group_Users.py ./dummy.json ./output.txt          ")
+    print("Example: python3 Filter_Group_Users_2020.py ./dummy.csv ./output.txt      ")
     print("==========================================================================")
     sys.exit()
 #===============================================================#
