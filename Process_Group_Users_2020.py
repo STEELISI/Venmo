@@ -99,7 +99,7 @@ if(len(sys.argv) != 3):
     print("==========================================================================")
     print("SORRY!! Please provide the path to the INPUT json file and the OUTPUT file")
     print("==========================================================================")
-    print("Example: python3 BERT_Classification_script.py ./dummy.json ./output.txt  ")
+    print("Example: python3 Process_Group_Users_2020.py ./dummy.json ./output.txt  ")
     print("==========================================================================")
     sys.exit()
 
