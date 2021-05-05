@@ -191,6 +191,8 @@ def preprocessing(origtokens):
 #"dussmmy,tht ,refrf ,r message",1618035048,11111111,99999,"John-Smith-2","janedoe",1618035048,1618035048            #
 #====================================================================================================================#
 # target_name
+#   1        2            3         4         5              6               7               8           9          10
+#message,created_time,actor_id,target_id,actor_username,target_username,actor_created,target_created,actor_name,target_name
 #====================================================================================================================#
 
 
@@ -217,10 +219,10 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                 outputfile.close()
 
 
-            if(transactions < current or len(row) != 10):
+            if(transactions < current or len(row) != 11):
                 continue
             tusername = row[6]
-            name = row[9]
+            name = row[10]
             firstname = lastname = name
             ## IDENTIFIED FROM Unames
             note = row[1] 
