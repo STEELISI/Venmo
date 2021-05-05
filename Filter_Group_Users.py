@@ -182,6 +182,16 @@ def preprocessing(origtokens):
 #===============================================================#
 
 
+#====================================================================================================================#
+#************************************************   FORMAT EXPECTED    **********************************************#
+#  1,           2,       ,   3      ,     4     ,      5         ,   6             ,      7        ,       8         #
+#"message","created_time","actor_id","target_id","actor_username","target_username","actor_created","target_created" #
+#"d dummy message",1618035048,11111111,99999,"John-Smith-2","janedoe",1618035048,1618035048                          #
+#"dussmmy,tht ,refrf ,r message",1618035048,11111111,99999,"John-Smith-2","janedoe",1618035048,1618035048            #
+#====================================================================================================================#
+# target_name
+#====================================================================================================================#
+
 
 for line in f:
     data = json.loads(line)
@@ -214,18 +224,18 @@ for line in f:
 
         lastname = "###;###;###;"
 
-        if('lastname' not in data['transactions'][0]['target']):
+        if('lastname' in data['transactions'][0]['target']):
             lastname = data['transactions'][0]['target']['lastname']
 
         firstname = "###;###;###;"
 
-        if('firstname' not in data['transactions'][0]['target']):
+        if('firstname' in data['transactions'][0]['target']):
             firstname = data['transactions'][0]['target']['firstname']
 
         name = "###;###;###;"
 
-        if('name' not in data['transactions'][0]['target']):
-            firstname = data['transactions'][0]['target']['name']
+        if('name' in data['transactions'][0]['target']):
+            name = data['transactions'][0]['target']['name']
 
 
 
@@ -239,6 +249,14 @@ for line in f:
         for username in parts:
      
             if(firstname == "AA" or lastname == "AA" or username == "AA" or name == "AA" or " AA " in name or name.startswith("AA ")  or name.endswith("AA")):
+                if(username not in filter_users):
+                    filter_users[username] = {}
+                    filter_users[username]['C'] = set()
+                filter_users[username]['C'].add("AA-U")
+                flag = 1
+                break
+
+            elif(firstname in aa or lastname in aa or username in aa or name in aa):
                 if(username not in filter_users):
                     filter_users[username] = {}
                     filter_users[username]['C'] = set()
@@ -360,6 +378,17 @@ for line in f:
                 filter_users[tusername]['C'].add("A-N")
                 flag = 1
                 break
+
+
+            elif(l in drugs):
+                if(username not in filter_users):
+                    filter_users[tusername] = {}
+                    filter_users[tusername]['C'] = set()
+                filter_users[tusername]['C'].add("D-N")
+                flag = 1
+                break
+
+
 
             elif(l in alcoholics):
                 if(username not in filter_users):
