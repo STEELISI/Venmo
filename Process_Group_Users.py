@@ -376,7 +376,7 @@ for line in f:
             receiver[tusername]['dates'][month] = {col:0 for col in userfields}
         receiver[tusername]['dates'][month]['A'] = receiver[tusername]['dates'][month]['A'] + 1
 
-
+        note = note.lower()
         for l in aa:
             if(l in note):
                 unique_senders[tusername][username]['AA'] += 1
@@ -643,7 +643,6 @@ sen = UNIQUESENDERS + strcurrent
 with open(sen, "wb") as myFile:
     pickle.dump(unique_senders, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
-print(unique_senders)
     
 # Write stats
 

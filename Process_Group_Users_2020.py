@@ -653,7 +653,6 @@ sen = UNIQUESENDERS + strcurrent
 with open(sen, "wb") as myFile:
     pickle.dump(unique_senders, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
-print(unique_senders)
     
 # Write stats
 
