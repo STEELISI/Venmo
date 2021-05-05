@@ -1,9 +1,8 @@
 #============================================================================================================#
 #*******************************   HOW TO RUN?  ************************************************************ #
-# python3 BERT_Classification_Checkpoints.py <path to the input json file>  <path to the output file>    #
 #*********************************************************************************************************** #
 # Example:                                                                                                   #
-# python3 BERT_Classification_Checkpoints.py /Users/rajattan/venmo/dummy.json ./transactions_date_wise.txt   #
+# python3 Process_Group_Users.py /Users/rajattan/venmo/dummy.json ./transactions_date_wise.txt               #
 #============================================================================================================#
 import re
 import os
