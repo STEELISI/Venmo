@@ -1,0 +1,4 @@
+Month Non-Cryptic Total
+July-2018 87 100
+August-2018 87 100
+October-2018 86 100
