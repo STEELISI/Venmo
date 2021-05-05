@@ -421,7 +421,6 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
         except:
             continue
 
-print(filter_users)
 with open(CHECKPOINT_FILE, "wb") as myFile:
     pickle.dump(transactions, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
