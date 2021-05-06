@@ -15,13 +15,14 @@ set output 'percentage.png'
 set grid
 set xtics rotate by -45
 set xlabel "Each month in the dataset"
-set ylabel "Percentage of monthly public Venmo transaction notes"
+set ylabel "Percentage of monthly public Venmo notes"
 set boxwidth 1.0 relative
 set style fill solid 1.0 border -1
 set yrange [0:35]
 set ytics 10
+#set autoscale
 
-plot '6-a.txt' using 2:xticlabels(strstrt(strcol(1),'March')?strcol(1):'') t "Percentage of sensitive/personal notes (Notes in English)" with boxes lc 2, '6-a.txt' using 3:xticlabels(strstrt(strcol(1),'March')?strcol(1):'') t "Percentage of sensitive/personal notes (Total Notes)" with boxes lc 7
+plot 'sensitive.txt' using 3:xtic(1) t "Percentage of sensitive/personal notes (Total Notes)" with boxes lc 2, 'sensitive.txt' using 2:xtic(1) t "Percentage of sensitive/personal notes (Notes in English)" with boxes lc 7
 
 
 
