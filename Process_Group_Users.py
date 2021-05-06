@@ -353,7 +353,7 @@ for line in f:
         if(tusername not in unique_senders):
             unique_senders[tusername] = {}
 
-        if(username not in unique_senders):
+        if(username not in unique_senders[tusername]):
             unique_senders[tusername][username] = {'AA':0,'G':0,'D':0,'A':0,'AL':0,'N':0}
 
         flagaa = 0

@@ -361,7 +361,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
             if(tusername not in unique_senders):
                 unique_senders[tusername] = {}
     
-            if(username not in unique_senders):
+            if(username not in unique_senders[tusername]):
                 unique_senders[tusername][username] = {'AA':0,'G':0,'D':0,'A':0,'AL':0,'N':0}
     
             flagaa = 0 
