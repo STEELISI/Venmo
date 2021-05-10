@@ -4,8 +4,6 @@
 #==================================================================================#
 CHECKPOINTFOLDER="checkpoint_MAY_1_2020/"
 OUTPUT_FILES_PATH="tmp/out"
-RANGE=1
-OFFSET=1
 
 #Make tmp dir
 mkdir -p $TEMPORARY_FOLDER_FOR_INTERMEDIATE_MERGES
