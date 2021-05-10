@@ -45,11 +45,11 @@ with open(recv_path, "rb") as myFile:
 #===============================================================#
 
 #   SENDER   #
-outputfile = open(write_path + 'sender_summary.' +  str(merge_version) +'txt', "w")
+outputfile = open(write_path + 'sender_summary.txt.' +  str(merge_version) , "w")
 scnt = -1
 
 for k,v in sender_final_stat.items():
-    if(v is None):
+    if(v is None or k is None):
         continue
 
     x = ""
@@ -91,11 +91,11 @@ outputfile.close()
 ##############
 
 #  RECEIVER  #
-outputfile1 = open(write_path + 'receiver_summary.'  +  str(merge_version) + 'txt', "w")
+outputfile1 = open(write_path + 'receiver_summary.txt.'  +  str(merge_version) , "w")
 rcnt = -1
 
 for k,v in receiver_final_stat.items():
-    if(v is None or k in sender_final_stat):
+    if(v is None or k is None or k in sender_final_stat):
         continue
 
     x = ""
