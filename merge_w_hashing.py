@@ -13,7 +13,8 @@ NUMBER_2 = 371 #set this to any number of your choice between 1 and 999 of your 
 NUMBER_3 = 4 #set this to any number of your choice between 1 and 9 of your choice 
 NUMBER_4 = 4 #set this to any number of your choice between 1 and 1000000 of your choice
 
-if(len(sys.argv) != 3):
+if(len(sys.argv) != 4):
+    print(len(sys.argv))
     print("==================================================================================")
     print("SORRY!! Please provide the paths to the directories for reading and writing       ")
     print("==================================================================================")
@@ -23,7 +24,7 @@ if(len(sys.argv) != 3):
 
 read_path = sys.argv[1]	# i.e. '/venmo/read/'
 write_path = sys.argv[2] # i.e. '/venmo/write/'
-merge_version = sys.argv[3] # i.e. Number e.g. 34567, as in sender.txt.34567
+merge_version = sys.argv[3].strip() # i.e. Number e.g. 34567, as in sender.txt.34567
 
 #===============================================================#
 #   READ & MERGE                                                #
@@ -35,16 +36,16 @@ recv_path = sys.argv[1] + "/receiver.txt." + str(merge_version)
 print("==============================")
 print(" PROCESSING INFORMATION       ")
 print("==============================")
-with open(join(sender_path, f), "rb") as myFile:
+with open(sender_path, "rb") as myFile:
     sender_final_stat = pickle.load(myFile)
-with open(join(recv_path, f), "rb") as myFile:
+with open(recv_path, "rb") as myFile:
     receiver_final_stat = pickle.load(myFile)
 #===============================================================#
 #   WRITE                                                       #
 #===============================================================#
 
 #   SENDER   #
-outputfile = open(write_path + 'sender_summary.txt', "w")
+outputfile = open(write_path + 'sender_summary.' +  str(merge_version) +'txt', "w")
 scnt = -1
 
 for k,v in sender_final_stat.items():
@@ -90,7 +91,7 @@ outputfile.close()
 ##############
 
 #  RECEIVER  #
-outputfile1 = open(write_path + 'receiver_summary.txt', "w")
+outputfile1 = open(write_path + 'receiver_summary.'  +  str(merge_version) + 'txt', "w")
 rcnt = -1
 
 for k,v in receiver_final_stat.items():
