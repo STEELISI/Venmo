@@ -17,13 +17,6 @@ echo $count
 echo $files
 
 
-#i=$RANGE
-#while [ $i -le $count ] ; do
-#  #echo "Processing $i to $(($i+$OFFSET-1))"
-#  #python3 merge_helper.py $CHECKPOINTFOLDER $TEMPORARY_FOLDER_FOR_INTERMEDIATE_MERGES $i $OFFSET
-#  i=$(($i+$OFFSET))
-#done
-
 for word in $files
 do
     python3 merge_w_hashing.py $CHECKPOINTFOLDER  $OUTPUT_FILES_PATH $word
