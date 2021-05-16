@@ -207,7 +207,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
     for row in chunk.itertuples():
         transactions = transactions + 1
         try:
-            if(transactions < current or len(row) != 9):
+            if(transactions < current or len(row) < 9):
                 continue
             username = row[5]
             tusername = row[6]
@@ -276,6 +276,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                 date_personal_stat[date[0]]['E'] += 1
             tokens_partial = preprocessing(origtokens)         
 
+            only_emojis = 0
             for t in tokens_partial:
                 if(is_emoji(t)):
                     if(english == 1):
@@ -287,10 +288,11 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                         only_emojis += 1
 
             if(only_emojis == len(tokens_partial)):
-                sender[username]['dates'][month]['OE'] += 1
-                date_personal_stat[date[0]]['OE'] += 1
-                receiver[tusername]['dates'][month]['OE'] += 1
                 cryptic = 1
+                if(only_emojis > 0):
+                    sender[username]['dates'][month]['OE'] += 1
+                    date_personal_stat[date[0]]['OE'] += 1
+                    receiver[tusername]['dates'][month]['OE'] += 1
 
             kod = 0
             if(cryptic == 0 and (english == 1)):
