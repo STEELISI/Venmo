@@ -7,13 +7,14 @@ import pickle
 sender_final_stat = {}
 receiver_final_stat = {}
 #userfields = [ 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','AC','E','I','PH','AD','TO','O','S','P','T','A']
-userfields = ['A','AL', 'C', 'E' ,'ET','OE', 'NC', 'L1', 'L2' , 'L3' , 'L4' , 'L5' , 'L6']
+#userfields = ['A','AL', 'C', 'E' ,'ET','OE', 'NC', 'L1', 'L2' , 'L3' , 'L4' , 'L5' , 'L6']
+userfields = ['A','AL', 'C', 'E' ,'ET','OE', 'NC']
 
 if(len(sys.argv) != 3):
     print("==================================================================================")
     print("SORRY!! Please provide the paths to the directories for reading and writing       ")
     print("==================================================================================")
-    print("Example: python3 merge_updated_format.py checkpoint_folder_path  output_file_path ")
+    print("Example: python3 merge_cryptic.py checkpoint_folder_path  output_file_path        ")
     print("==================================================================================")
     sys.exit()
 
