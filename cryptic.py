@@ -281,7 +281,7 @@ for line in f:
 
         only_emojis = 0
         for t in tokens_partial:
-            if(is_emoji(t)):
+            if(emoji.emoji_count(t) > 0):
                 if(english == 1):
                     sender[username]['dates'][month]['ET'] += 1
                     date_personal_stat[date[0]]['ET'] += 1
