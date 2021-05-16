@@ -64,13 +64,16 @@ pattern = re.compile(r"(.)\1{2,}")
 aa_more = set()
 aa_more.add(" AA ")
 aa_more.add("Awakening")
+aa_more.add("awakening")
 aa_more.add("Gratitude")
 aa_more.add("GRATITUDE")
+aa_more.add("gratitude")
 aa_more.add("AWAKENING")
 aa_more.add("Reflections")
 aa_more.add("reflections")
 aa_more.add("Sobriety")
 aa_more.add("SOBRIETY")
+aa_more.add("sobriety")
 
 #===============================================================#
 f = open(sys.argv[1])
@@ -246,7 +249,7 @@ for line in f:
                 flag = 1
                 break
 
-            elif(lfirstname in aa or llastname in aa or lusername.lower() in aa or lname in aa or lfirstname in aa_more or llastname in aa_more or lusername in aa_more or lname in aa_more):
+            elif(lfirstname in aa or llastname in aa or lusername in aa or lname in aa or lfirstname in aa_more or llastname in aa_more or lusername in aa_more or lname in aa_more):
                 if(tusername not in filter_users):
                     filter_users[tusername] = {}
                     filter_users[tusername]['C'] = set()
