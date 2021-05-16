@@ -290,10 +290,12 @@ for line in f:
                 else:
                     only_emojis += 1
         if(only_emojis == len(tokens_partial)):
-            sender[username]['dates'][month]['OE'] += 1
-            date_personal_stat[date[0]]['OE'] += 1
-            receiver[tusername]['dates'][month]['OE'] += 1
             cryptic = 1
+            if(only_emojis > 0):
+                sender[username]['dates'][month]['OE'] += 1
+                date_personal_stat[date[0]]['OE'] += 1
+                receiver[tusername]['dates'][month]['OE'] += 1
+                cryptic = 1
 
         kod = 0
         if(cryptic == 0 and (english == 1)):
