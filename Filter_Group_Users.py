@@ -17,11 +17,7 @@ from nltk import tokenize
 CHECKPOINT_INTERVAL = 10000000
 #===============================================================#
 PATH_TO_AA_LIST = "data/AA.txt"
-PATH_TO_FRATERNITY_LIST = "data/FRATERNITY.txt"
 PATH_TO_GAMBLING_LIST = "data/GAMBLING.txt"
-PATH_TO_ADULT_LIST = "data/ADULT.txt"
-PATH_TO_DRUGS_LIST = "data/DRUGS.txt"
-PATH_TO_ALCOHOLICS_LIST = "data/ALCOHOLICS.txt"
 PATH_TO_STOPWORDS_LIST = "data/STOPWORDS.txt"
 #===============================================================#
 USERS_FILE = "checkpoint_part1/PARTIAL_OUTPUT.txt"
@@ -51,12 +47,7 @@ if(len(sys.argv) != 3 or not (os.path.exists(CHECKPOINT_DIR))):
 #===============================================================#
 
 aa=set()
-fraternity = set()
-fraternity_small = set()
 gambling = set()
-adult = set()
-drugs = set()
-alcoholics = set()
 
 filter_users = {}
 
@@ -68,6 +59,19 @@ numbatch = 0
 transactions = 0
 
 pattern = re.compile(r"(.)\1{2,}")
+
+#SINGLE WORDS SEPARATE PROCESSING#
+aa_more = set()
+aa_more.add(" AA ")
+aa_more.add("Awakening")
+aa_more.add("Gratitude")
+aa_more.add("GRATITUDE")
+aa_more.add("AWAKENING")
+aa_more.add("Reflections")
+aa_more.add("reflections")
+aa_more.add("Sobriety")
+aa_more.add("SOBRIETY")
+
 #===============================================================#
 f = open(sys.argv[1])
 
@@ -141,32 +145,9 @@ with open(PATH_TO_GAMBLING_LIST,'r') as fp:
     for l in fp:
         gambling.add(''.join(convert_letters(l.strip())))
 
-with open(PATH_TO_ADULT_LIST,'r') as fp:
-    for l in fp:
-        adult.add(''.join(convert_letters(l.strip())))
-
-with open(PATH_TO_DRUGS_LIST,'r') as fp:
-    for l in fp:
-        drugs.add(''.join(convert_letters(l.strip())))
-
-with open(PATH_TO_ALCOHOLICS_LIST,'r') as fp:
-    for l in fp:
-        alcoholics.add(''.join(convert_letters(l.strip())))
-
 with open(PATH_TO_AA_LIST,'r') as fp:
     for l in fp:
         aa.add(''.join(convert_letters(l.strip())))
-
-with open(PATH_TO_FRATERNITY_LIST,'r') as fp:
-    for l in fp:
-        fraternity_small.add(''.join(convert_letters(l.strip())))
-
-with open(PATH_TO_FRATERNITY_LIST,'r') as fp:
-    for l in fp:
-        fraternity.add(l.strip())
-
-
-
 
 
 #===============================================================#
@@ -215,7 +196,7 @@ for line in f:
             outputfile.close()
 
 
-        if(data is None or data['message'] is None):
+        if(data is None):
             continue
 
         if('transactions' not in data or data['transactions'] is None  or 'target' not in data['transactions'][0] or 'username' not in data['transactions'][0]['target']):
@@ -233,12 +214,13 @@ for line in f:
             firstname = data['transactions'][0]['target']['firstname']
 
         name = "###;###;###;"
-
         if('name' in data['transactions'][0]['target']):
             name = data['transactions'][0]['target']['name']
-
-
-
+       
+        lfirstname = firstname.lower()
+        llastname = lastname.lower()
+        lname = name.lower()
+        
         ## IDENTIFIED FROM Unames
         note = str(data['message'])
    
@@ -247,77 +229,96 @@ for line in f:
  
         flag = 0
         for username in parts:
-     
+            lusername = username.lower()
             if(firstname == "AA" or lastname == "AA" or username == "AA" or name == "AA" or " AA " in name or name.startswith("AA ")  or name.endswith("AA")):
-                if(username not in filter_users):
-                    filter_users[username] = {}
-                    filter_users[username]['C'] = set()
-                filter_users[username]['C'].add("AA-U")
+                if(tusername not in filter_users):
+                    filter_users[tusername] = {}
+                    filter_users[tusername]['C'] = set()
+                filter_users[tusername]['C'].add("AA-U")
+                flag = 1
+                break
+            
+            elif(firstname in aa or lastname in aa or username in aa or name in aa or firstname in aa_more or lastname in aa_more or username in aa_more or name in aa_more):
+                if(tusername not in filter_users):
+                    filter_users[tusername] = {}
+                    filter_users[tusername]['C'] = set()
+                filter_users[tusername]['C'].add("AA-U")
                 flag = 1
                 break
 
-            elif(firstname in aa or lastname in aa or username in aa or name in aa):
-                if(username not in filter_users):
-                    filter_users[username] = {}
-                    filter_users[username]['C'] = set()
-                filter_users[username]['C'].add("AA-U")
+            elif(lfirstname in aa or llastname in aa or lusername.lower() in aa or lname in aa or lfirstname in aa_more or llastname in aa_more or lusername in aa_more or lname in aa_more):
+                if(tusername not in filter_users):
+                    filter_users[tusername] = {}
+                    filter_users[tusername]['C'] = set()
+                filter_users[tusername]['C'].add("AA-U")
                 flag = 1
                 break
-    
-    
-            elif(firstname in fraternity or lastname in fraternity or username in fraternity or name in fraternity):
-                if(username not in filter_users):
-                    filter_users[username] = {}
-                    filter_users[username]['C'] = set()
-                filter_users[username]['C'].add("F-U")
-                flag = 1 
-                break
-                
+
     
             elif(firstname in gambling or lastname in gambling or username in gambling or name in gambling):
-                if(username not in filter_users):
-                    filter_users[username] = {}
-                    filter_users[username]['C'] = set()
-                filter_users[username]['C'].add("G-U")
+                if(tusername not in filter_users):
+                    filter_users[tusername] = {}
+                    filter_users[tusername]['C'] = set()
+                filter_users[tusername]['C'].add("G-U")
                 flag = 1 
                 break
-    
-            elif(firstname in adult or lastname in adult or username in adult or name in adult):
-                if(username not in filter_users):
-                    filter_users[username] = {}
-                    filter_users[username]['C'] = set()
-                filter_users[username]['C'].add("A-U")
-                flag = 1 
+
+            elif(lfirstname in gambling or llastname in gambling or lusername in gambling or lname in gambling):
+                if(tusername not in filter_users):
+                    filter_users[tusername] = {}
+                    filter_users[tusername]['C'] = set()
+                filter_users[tusername]['C'].add("G-U")
+                flag = 1
                 break
-    
-            elif(firstname in drugs or lastname in drugs or username in drugs or name in drugs):
-                if(username not in filter_users):
-                    filter_users[username] = {}
-                    filter_users[username]['C'] = set()
-                filter_users[username]['C'].add("D-U")
-                flag = 1 
-                break
-    
-            elif(firstname in alcoholics or lastname in alcoholics or username in alcoholics or name in alcoholics):
-                if(username not in filter_users):
-                    filter_users[username] = {}
-                    filter_users[username]['C'] = set()
-                filter_users[username]['C'].add("AL-U")
-                flag = 1 
-                break
+
     
         if(flag == 1):
             continue
 
 
-        for l in fraternity:
-            if(len(l) > 3 and (firstname in l or lastname in l or tusername in l or name in l)):
-                if(username not in filter_users):
+        parts = name.split(" ")
+        for username in parts:
+            lusername = username.lower()
+            if(firstname == "AA" or lastname == "AA" or username == "AA" or name == "AA" or " AA " in name or name.startswith("AA ")  or name.endswith("AA")):
+                if(tusername not in filter_users):
                     filter_users[tusername] = {}
                     filter_users[tusername]['C'] = set()
-                filter_users[tusername]['C'].add("F-U")
+                filter_users[tusername]['C'].add("AA-U")
                 flag = 1
                 break
+
+            elif(firstname in aa or lastname in aa or username in aa or name in aa or firstname in aa_more or lastname in aa_more or username in aa_more or name in aa_more):
+                if(tusername not in filter_users):
+                    filter_users[tusername] = {}
+                    filter_users[tusername]['C'] = set()
+                filter_users[tusername]['C'].add("AA-U")
+                flag = 1
+                break
+
+            elif(lfirstname in aa or llastname in aa or lusername in aa or lname in aa or lfirstname in aa_more or llastname in aa_more or lusername in aa_more or lname in aa_more):
+                if(tusername not in filter_users):
+                    filter_users[tusername] = {}
+                    filter_users[tusername]['C'] = set()
+                filter_users[tusername]['C'].add("AA-U")
+                flag = 1
+                break
+
+            elif(firstname in gambling or lastname in gambling or username in gambling or name in gambling):
+                if(tusername not in filter_users):
+                    filter_users[tusername] = {}
+                    filter_users[tusername]['C'] = set()
+                filter_users[tusername]['C'].add("G-U")
+                flag = 1
+                break
+
+            elif(lfirstname in gambling or llastname in gambling or lusername in gambling or lname in gambling):
+                if(tusername not in filter_users):
+                    filter_users[tusername] = {}
+                    filter_users[tusername]['C'] = set()
+                filter_users[tusername]['C'].add("G-U")
+                flag = 1
+                break
+
 
         if(flag == 1):
             continue
@@ -330,6 +331,7 @@ for line in f:
             continue
 
 
+        name = name.lower()
 
         for l in aa:
             if( l in name):
@@ -355,15 +357,7 @@ for line in f:
 
         for l in origtokens:
 
-            if(l in fraternity_small):
-                if(username not in filter_users):
-                    filter_users[tusername] = {}
-                    filter_users[tusername]['C'] = set()
-                filter_users[tusername]['C'].add("F-N")
-                flag = 1
-                break
-
-            elif(l in gambling):
+            if(l in gambling):
                 if(username not in filter_users):
                     filter_users[tusername] = {}
                     filter_users[tusername]['C'] = set()
@@ -371,39 +365,11 @@ for line in f:
                 flag = 1
                 break
 
-            elif(l in adult):
-                if(username not in filter_users):
-                    filter_users[tusername] = {}
-                    filter_users[tusername]['C'] = set()
-                filter_users[tusername]['C'].add("A-N")
-                flag = 1
-                break
-
-
-            elif(l in drugs):
-                if(username not in filter_users):
-                    filter_users[tusername] = {}
-                    filter_users[tusername]['C'] = set()
-                filter_users[tusername]['C'].add("D-N")
-                flag = 1
-                break
-
-
-
-            elif(l in alcoholics):
-                if(username not in filter_users):
-                    filter_users[tusername] = {}
-                    filter_users[tusername]['C'] = set()
-                filter_users[tusername]['C'].add("AL-N")
-                flag = 1
-                break
-
-
         if(flag == 1):
             continue
 
         for l in gambling:
-            if(len(l) > 3 and (firstname in l or lastname in l or tusername in l or name in l)):
+            if(len(l) > 3 and ((len(firstname) > 3 and firstname in l) or (len(lastname) > 3 and lastname in l) or (len(tusername) > 3 and tusername in l) or (len(name) > 3 and name in l))):
                 if(username not in filter_users):
                     filter_users[tusername] = {}
                     filter_users[tusername]['C'] = set()
@@ -415,30 +381,7 @@ for line in f:
         if(flag == 1):
             continue
 
-        for l in adult:
-            if(len(l) > 3 and (firstname in l or lastname in l or tusername in l or name in l)):
-                if(username not in filter_users):
-                    filter_users[tusername] = {}
-                    filter_users[tusername]['C'] = set()
-                filter_users[tusername]['C'].add("A-U")
-                flag = 1
-                break
-
-
-        if(flag == 1):
-            continue
-
-        for l in alcoholics:
-            if(len(l) > 3 and (firstname in l or lastname in l or tusername in l or name in l)):
-                if(username not in filter_users):
-                    filter_users[tusername] = {}
-                    filter_users[tusername]['C'] = set()
-                filter_users[tusername]['C'].add("AL-U")
-                flag = 1
-                break
-
-
-    except:
+    except Exception as e:
         continue
 f.close()
 
