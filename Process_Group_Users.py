@@ -11,6 +11,9 @@ import time
 import json
 import nltk
 import pickle
+import emoji
+import enchant
+import datetime
 import os.path
 import numpy as np
 import pandas as pd
@@ -22,23 +25,14 @@ from transformers import BertTokenizer
 from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
-MAX_LEN = 10
-BATCH = 50000
-CHECKPOINT_INTERVAL = 6
+BATCH = 1000000
 
 #===============================================================#
 current = 0
 numbatch = 0
 transactions = 0
-myr = [''] * BATCH
-dates = [''] * BATCH
-notes = [''] * BATCH
-uname = [''] * BATCH
-tuname = [''] * BATCH
 #===============================================================#
 cnt = 0
-receiver = {}
-keywords = set()
 stopwords = set()
 date_category_stat = {}
 date_personal_stat = {}
@@ -47,55 +41,33 @@ unique_r = {}
 
 aa=set()
 gambling = set()
-adult = set()
-drugs = set()
-alcoholics = set()
-
+moreaa=set()
 filter_users = {}
-unique_senders = {}
+unique = {}
 
 
 #===============================================================#
-TEST_BATCH = 32
-UNIQUESENDERS = "checkpoint/unique_senders.txt"
-RECEIVER_FILE = "checkpoint/receiver.txt"
-CHECKPOINT_FILE = "checkpoint/current.txt"
-PATH_TO_STOPWORDS_LIST = "data/STOPWORDS.txt"
-MODEL_FILE = "BERT_MODEL/checkpoint_EPOCHS_6a"
-DATECAT_FILE = "checkpoint/date_category_stat.txt"
-DATEPER_FILE = "checkpoint/date_personal_stat.txt"
-PATH_TO_KEYWORDS_LIST = "data/UNIQ_KEYWORDS_LIST.txt"
-
 USERS_FILE = "checkpoint_part1/PARTIAL_OUTPUT.txt"
 
+UNIQUESENDERS = "checkpoint/unique.txt"
+CHECKPOINT_FILE = "checkpoint/current.txt"
+PATH_TO_STOPWORDS_LIST = "data/STOPWORDS.txt"
 
 PATH_TO_AA_LIST = "data/AA.txt"
 PATH_TO_GAMBLING_LIST = "data/GAMBLING.txt"
-PATH_TO_ADULT_LIST = "data/ADULT.txt"
-PATH_TO_DRUGS_LIST = "data/DRUGS.txt"
-PATH_TO_ALCOHOLICS_LIST = "data/ALCOHOLICS.txt"
+PATH_TO_MORE_AA_LIST = "data/MOREAA.txt"
 
 #===============================================================#
-
-pattern = re.compile(r"(.)\1{2,}")
-pattern_rm1 = re.compile(r"(.)\1{1,}")
-possible_personal = re.compile("\d")
 english_ch = re.compile("[A-Za-z0-9]+")
 email = re.compile("[^@]+@[^@]+\.[^@]+")
-invc = re.compile("(((invoice|invc)(|s)|tracking)( \d|#|:| #| (\w)+\d))")
-phno = re.compile("\d{3}[-\.\s]??\d{3}[-\.\s]??\d{4}|\(\d{3}\)\s*\d{3}[-\.\s]??\d{4}|\d{3}[-\.\s]??\d{4}")
-#acnt = re.compile("( id \d)|(password|passwd|paswd|pswd|pswrd|pwd|code)(:| is)|username:|(username|user name)(|s) |id:")
-acnt = re.compile("((password|passwd|paswd|pswd|pswrd|pwd|code|username|user name|userid|user id|: password )(:| is |: | : | to (my|his|her|their| the) |\? | \? |! |!! )([a-zA-Z0-9$#~!@%^&*]+))|((([a-zA-Z0-9$#~!@%^&*]+) is ((my|his|her|their| the) (password|passwd|paswd|pswd|pswrd|pwd|code|username|user name|userid|user id))))")
-#street = re.compile("\d+[ ](?:[A-Za-z0-9.-]+[ ]?)+(?:Avenue|Lane|Road|Boulevard|Drive|Street|Ave|Dr|Rd|Blvd|Ln|St)\.?")
-adr = re.compile("( (avenue|lane|road|boulevard|drive|street|ave|dr|rd|blvd|ln|st|way)(,|\.| ))|( (al|ak|as|az|ar|ca|co|ct|de|dc|fm|fl|ga|gu|hi|id|il|in|ia|ks|ky|la|me|mh|md|ma|mi|mn|ms|mo|mt|ne|nv|nh|nj|nm|ny|nc|nd|mp|oh|ok|or|pw|pa|pr|ri|sc|sd|tn|tx|ut|vt|vi|va|wa|wv|wi|wy) \b\d{5}(?:-\d{4})?\b)")
-
+dat = re.compile("([0-9]{1,2}(/|-)[0-9]{1,2}(/|-)[0-9]{4})|([0-9]{1,2}(/|-)[0-9]{1,2})")
 #===============================================================#
 
 if(len(sys.argv) != 3):
     print("==========================================================================")
     print("SORRY!! Please provide the path to the INPUT json file and the OUTPUT file")
     print("==========================================================================")
-    print("Example: python3 BERT_Classification_script.py ./dummy.json ./output.txt  ")
+    print("Example: python3 Process_Group_Users.py ./dummy.json ./output.txt         ")
     print("==========================================================================")
     sys.exit()
 
@@ -106,11 +78,11 @@ if(os.path.exists(CHECKPOINT_FILE)):
         current = pickle.load(myFile)
     print("RESUMING FROM " + str(current))
     if(current > 0):
-        datecat = DATECAT_FILE
-        with open(datecat, "rb") as myFile:
-            date_category_stat = pickle.load(myFile)
+        us = UNIQUESENDERS + "." + str(current)
+        with open(us, "rb") as myFile:
+            unique = pickle.load(myFile)
 
-        if(len(date_category_stat) == 0 or len(date_category_stat) == 0): # or len(sender) == 0 or len(receiver) == 0):
+        if(len(unique) == 0):
             print("===================================================================")
             print("****** COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.******")
             print("***                YOU NEED TO RECOMPUTE THINGS AGAIN.          ***")
@@ -141,51 +113,10 @@ else:
 
 
 #===============================================================#
-class BertClassifier(tf.keras.Model):    
-    def __init__(self, bert: TFBertModel, num_classes: int):
-        super().__init__()
-        self.bert = bert
-        self.classifier = Dense(num_classes, activation='sigmoid')
-        
-    @tf.function
-    def call(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None):
-        outputs = self.bert(input_ids,
-                               attention_mask=attention_mask,
-                               token_type_ids=token_type_ids,
-                               position_ids=position_ids,
-                               head_mask=head_mask)
-        cls_output = outputs[1]
-        cls_output = self.classifier(cls_output)
-                
-        return cls_output
-
-
-#===============================================================#
 with open(PATH_TO_STOPWORDS_LIST,'r') as fp:
     for l in fp:
         stopwords.add(l.strip())
 
-#===============================================================#
-#c0 = c1 = [' '] * BATCH
-cols_name = ['Date', 'Note','myr','uname','tuname','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
-label_cols = cols_name[5:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
-sens_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','T']
-
-# Account, Email, Invoice, Personal, Address, Total, Overlap
-# T - Tot Sensitive , TO - Tot Personal
-#personal_cols = ['AC','E','I','PH','AD','TO','O']
-userfields = [ 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','T','A','AA']
-
-
-bert_model_name = 'bert-base-uncased'
-tokenizer = BertTokenizer.from_pretrained(bert_model_name, do_lower_case=True)
-
-saved_model = BertClassifier(TFBertModel.from_pretrained(bert_model_name), len(label_cols))
-saved_model.load_weights(MODEL_FILE)
-time.sleep(5)
-print("\n MODEL LOADED\n\n\n\n\n")
-
-c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * (BATCH - 1)
 #===============================================================#
 
 """
@@ -222,42 +153,10 @@ def remove_blanc(tokens):
     return [token.strip() for token in tokens]
 #===============================================================#
 """
-Phone number regex
-"""
-def contains_phn(note):
-    if(phno.search(note)):
-        return True
-    return False
-#===============================================================#
-"""
 Email address regex
 """
 def contains_email(note):
     if(email.search(note)):
-        return True
-    return False
-#===============================================================#
-"""
-Contains address
-"""
-def contains_address(note):
-    if(adr.search(note)):
-        return True
-    return False
-#===============================================================#
-"""
-Account Details
-"""
-def contains_acc(note):
-    if(acnt.search(note)):
-        return True
-    return False
-#===============================================================#
-"""
-Invoice Details
-"""
-def contains_invoice(note):
-    if(invc.search(note)):
         return True
     return False
 #===============================================================#
@@ -285,42 +184,19 @@ def preprocessing_cntd(tokens):
     tokens = [t for t in tokens if len(t) != 0]
     return tokens
 #===============================================================#
-
-def create_dataset(data_tuple, epochs=1, batch_size=32, buffer_size=100, train=False):
-    dataset = tf.data.Dataset.from_tensor_slices(data_tuple)
-    if train:
-        dataset = dataset.shuffle(buffer_size=buffer_size)
-    dataset = dataset.repeat(epochs)
-    dataset = dataset.batch(batch_size)
-    if train:
-        dataset = dataset.prefetch(1)
-
-    return dataset
-
-#===============================================================#
 with open(PATH_TO_GAMBLING_LIST,'r') as fp:
     for l in fp:
         gambling.add(''.join(convert_letters(l.strip())))
 
-with open(PATH_TO_ADULT_LIST,'r') as fp:
-    for l in fp:
-        adult.add(''.join(convert_letters(l.strip())))
-
-with open(PATH_TO_DRUGS_LIST,'r') as fp:
-    for l in fp:
-        drugs.add(''.join(convert_letters(l.strip())))
-
-with open(PATH_TO_ALCOHOLICS_LIST,'r') as fp:
-    for l in fp:
-        alcoholics.add(''.join(convert_letters(l.strip())))
 
 with open(PATH_TO_AA_LIST,'r') as fp:
     for l in fp:
         aa.add(''.join(convert_letters(l.strip())))
 
-with open(PATH_TO_KEYWORDS_LIST,'r') as fp:
+with open(PATH_TO_MORE_AA_LIST,'r') as fp:
     for l in fp:
-        keywords.add(''.join(convert_letters(l.strip())))
+        moreaa.add(''.join(convert_letters(l.strip())))
+
 
 
 #===============================================================#
@@ -334,8 +210,6 @@ for line in f:
         if(transactions < current):
             continue
         
-        #print(transactions,CHECKPOINT_INTERVAL)
-
         #==============================#
         ### Checks for Invalid JSONs ###
         #==============================#
@@ -350,332 +224,259 @@ for line in f:
             continue
 
         username = data['actor']['username']
-        if(tusername not in unique_senders):
-            unique_senders[tusername] = {}
 
-        if(username not in unique_senders[tusername]):
-            unique_senders[tusername][username] = {'AA':0,'G':0,'D':0,'A':0,'AL':0,'N':0}
+        if(tusername not in unique):
+            unique[tusername] = {}
 
-        flagaa = 0
+        recv = tusername
+        sen = username
+        AAflag = 0
+        if("AA-U" in filter_users[tusername]['C'] or "AA-N" in filter_users[tusername]['C']):
+            AAflag = 1
 
-        datetim = str(data['created_time'])
-        date = datetim.split("T")
-        month = date[0][2:7]
 
+        if(username not in unique[tusername]):
+            if(AAflag == 1):
+                unique[tusername][username] = {'TAA':0, 'AA':0,'Tradition':0,'Lunch Bunch':0,'Book Study':0,'Early Bird':0,'Eye Opener':0, 'Attitude':0, 'O' : 0, 'N':0,'T':0, '11 step':0, 'meeting':0, 'dues':0, 'donation':0, 'only emoji':0, 'greeting/gratitude':0, 'date':0}
+            else:
+                unique[tusername][username] = {'TG':0,'Poker':0,'Gamble':0, 'Casino':0, 'betting':0, 'play':0, 'Lottery':0, 'date':0, 'greeting/gratitude':0, 'only emoji':0, 'N':0,'T':0, 'Email':0, 'Money':0}
+
+        unique[tusername][username]['T'] += 1
         note = str(data['message'])
-
-        if(tusername not in receiver):
-            receiver[tusername] = {}
-            receiver[tusername]['dates'] = {}
-            if('date_created' in data['transactions'][0]['target']):
-                s = str(data['transactions'][0]['target']['date_created'])
-                d = s.split("T")
-                receiver[tusername]['joined'] = d[0]
-
-        if(month not in receiver[tusername]['dates']):
-            receiver[tusername]['dates'][month] = {col:0 for col in userfields}
-        receiver[tusername]['dates'][month]['A'] = receiver[tusername]['dates'][month]['A'] + 1
-
         note = note.lower()
-        for l in aa:
-            if(l in note):
-                unique_senders[tusername][username]['AA'] += 1
-                receiver[tusername]['dates'][month]['AA'] += 1
-                flagaa = 1
-                break
 
-        if(flagaa == 1):
-            continue
 
-        origtokens = nltk.word_tokenize(note)
-        tokens_partial = preprocessing(origtokens)
-        tokens = preprocessing_cntd(tokens_partial)
-        
-        if(len(origtokens) > 30):
-            unique_senders[tusername][username]['N'] += 1
-            continue
- 
-        note = ' '.join(tokens).strip()
-
-        if(len(note) == 0 or  english_ch.search(note) == None):# or (not(detect(note) == "en"))):
-            continue
-
-        flag = 0
-        for t in tokens:
-            if(t in gambling):
-                unique_senders[tusername][username]['G'] += 1
+        if(AAflag == 1):
+            flag =0
+            if("aa" in note or "alcoholics anonymous" in note):
+                unique[recv][sen]['AA'] += 1
                 flag = 1
-                break
-            elif(t in adult):
-                unique_senders[tusername][username]['A'] += 1
+    
+            if("7 th tradition" in note or "7th tradition" in note or "7th" in note or "7" in note or "seventh" in note or "trad" in note):
+                unique[recv][sen]['Tradition'] += 1
                 flag = 1
-                break
-            elif(t in drugs):
-                unique_senders[tusername][username]['D'] += 1
+    
+            if("lunch bunch" in note):
+                unique[recv][sen]['Lunch Bunch'] += 1
                 flag = 1
-                break
-            elif(t in alcoholics):
-                unique_senders[tusername][username]['AL'] += 1
+    
+            if("book study" in note):
+                unique[recv][sen]['Book Study'] += 1
                 flag = 1
-                break
-
-            elif(t in keywords):
+    
+            if("early bird" in note):
+                unique[recv][sen]['Early Bird'] += 1
                 flag = 1
-                break 
-
-
-
-        if(flag == 0 and len(tokens) > 1):
-            bigrams = [' '.join(list(t)) for t in list(nltk.bigrams(tokens))]
-            for bi in bigrams:
-                if(bi in keywords):
+    
+            if("attitude" in note):
+                unique[recv][sen]['Attitude'] += 1
+                flag = 1
+    
+            if("eye opener" in note):
+                unique[recv][sen]['Eye Opener'] += 1
+                flag = 1
+    
+    
+            if("11th step" in note or "eleventh step" in note or "11th" in note or "11 th" in note):
+                unique[recv][sen]['11 step'] += 1
+                flag = 1
+    
+            if("meeting" in note or "meetings" in note or "meet" in note):
+                unique[recv][sen]['meeting'] += 1
+                flag = 1
+    
+            if("dues" in note or "due" in note or "payment" in note):
+                unique[recv][sen]['dues'] += 1
+                flag = 1
+    
+            if("donate" in note or "donations" in note or "donation" in note or "contribute" in note or "contribution" in note or "contributing" in note):
+                unique[recv][sen]['donation'] += 1
+                flag = 1
+    
+            origtokens = nltk.word_tokenize(note)
+            if(english_ch.search(note) is None):
+                fl = 0
+                for t in origtokens:
+                    if(emoji.emoji_count(t) <= 0):
+                        fl = 0
+                        break
+                    else:
+                        fl = 1
+                if(fl == 1):
+                    unique[recv][sen]['only emoji'] += 1
                     flag = 1
-                    break
-            tokens_partial = reduce_lengthening_rm1(tokens_partial)
-            for t in tokens_partial:
-                if(t in keywords):
+            if(dat.search(note) is not None):
+                unique[recv][sen]['date'] += 1
+                flag = 1
+    
+            origtokens = remove_blanc(origtokens)
+            origtokens = remove_special(origtokens)
+            if(flag == 0):
+                fl = 0
+                for t in origtokens:
+                    if(not (t in moreaa)):
+                        fl = 0
+                        break
+                    else:
+                        fl = 1
+                if(fl == 1):
+                    unique[recv][sen]['greeting/gratitude'] += 1
                     flag = 1
-                    break
+    
+            if(flag == 1):
+                unique[recv][sen]['TAA'] += 1
+            if(flag == 0):
+                for ll in aa:
+                    if(ll in note):
+                        unique[recv][sen]['O'] += 1
+                        flag = 1
+    
+                        break
+            if(flag == 0):
+                unique[recv][sen]['N'] += 1
 
-        if(flag == 0):
-            unique_senders[tusername][username]['N'] += 1
-            continue
+        else:
+            flag =0
+            if("pok" in note):
+                unique[recv][sen]['Poker'] += 1
+                flag = 1
+    
+            if("casino" in note):
+                unique[recv][sen]['Casino'] += 1
+                flag = 1
+    
+    
+            if("bet" in note or "betting" in note):
+                unique[recv][sen]['betting'] += 1
+                flag = 1
+    
+    
+            if("gamble" in note or "gambling" in note):
+                unique[recv][sen]['Gamble'] += 1
+                flag = 1
+    
+            if("blackjack" in note or "black jack"  in note or "card"  in note or "play"  in note or "game" in note or "fantasy" in note or "ball" in note or "league" in note or "tournament" in note or "pool" in note or "dart" in note):
+                unique[recv][sen]['play'] += 1
+                flag = 1
+    
+            if("drawing" in note or "raffle" in note or "lottery" in note or "raffle" in note):
+                unique[recv][sen]['Lottery'] += 1
+                flag = 1
+    
+            if("money" in note or "dollar" in note or "ticket" in note or "package" in note or "vip" in note or "refund" in note):
+                unique[recv][sen]['Money'] += 1
+                flag = 1
+    
+            if(contains_email(note)):
+                unique[recv][sen]['Email'] += 1
+                flag = 1
+    
+            origtokens = nltk.word_tokenize(note)
+            if(english_ch.search(note) is None):
+                fl = 0
+                for t in origtokens:
+                    if(emoji.emoji_count(t) <= 0):
+                        fl = 0
+                        break
+                    else:
+                        fl = 1
+                if(fl == 1):
+                    unique[recv][sen]['only emoji'] += 1
+                    #flag = 1
+            if(dat.search(note) is not None):
+                unique[recv][sen]['date'] += 1
+                flag = 1
+    
+            origtokens = remove_blanc(origtokens)
+            origtokens = remove_special(origtokens)
+            if(flag == 0):
+                fl = 0
+                for t in origtokens:
+                    if(not (t in moreaa)):
+                        fl = 0
+                        break
+                    else:
+                        fl = 1
+                if(fl == 1):
+                    unique[recv][sen]['greeting/gratitude'] += 1
+                    flag = 1
+    
+            if(flag == 1):
+                unique[recv][sen]['TG'] += 1
+            if(flag == 0):
+                unique[recv][sen]['N'] += 1
 
-        dates[cnt] = date[0]
-        notes[cnt] = note
-        myr[cnt] = month
-        uname[cnt] = username
-        tuname[cnt] = tusername
         if cnt == (BATCH-1):
             current = transactions
             numbatch = numbatch + 1
             cnt = -1
-            table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9)
-            table = list(table)
-            table = [list(r) for r in table]
-            test_preds = pd.DataFrame(np.array(table), columns=cols_name)
-
-            test_input_ids = []
-            test_attention_masks = []
-
-            for sent in test_preds['Note']:
-                encoded_dict = tokenizer.encode_plus(
-                                    sent,                      # Sentence to encode.
-                                    add_special_tokens = True, # Add '[CLS]' and '[SEP]'
-                                    truncation='longest_first',
-                                    max_length = MAX_LEN,           # Pad & truncate all sentences.
-                                    pad_to_max_length = True,
-                                    return_attention_mask = True,   # Construct attn. masks.
-                                    # return_tensors = 'tf',     # Return tensorflow tensor.
-                               )
-                test_input_ids.append(encoded_dict['input_ids'])
-                test_attention_masks.append(encoded_dict['attention_mask'])
-
-            test_dataset = create_dataset((test_input_ids, test_attention_masks), epochs=1, batch_size=32, train=False)
-            # prediction
-            for i, (token_ids, masks) in enumerate(test_dataset):
-                start = i * TEST_BATCH
-                end = (i+1) * TEST_BATCH - 1
-                predictions = saved_model(token_ids, attention_mask=masks).numpy()
-                binary_predictions = np.where(predictions > 0.5, 1, 0)
-                test_preds.loc[start:end, label_cols] = binary_predictions
-            
-
-            # update stats
-            for index, row in test_preds.iterrows():
-                sen_flag = 1
-                date = str(row['Date'])
-                un = str(row['uname'])
-                tun = str(row['tuname'])
-                mon = str(row['myr'])
-
-                if date not in date_category_stat:
-                    date_category_stat[date] = {col:0 for col in sens_cols}
-                for col in label_cols:
-                    if row[col] == 0:
-                        continue
-                    date_category_stat[date][col] = date_category_stat[date][col] + 1
-
-                    if(mon not in receiver[tun]['dates']):
-                        receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-                    receiver[tun]['dates'][mon][col] = receiver[tun]['dates'][mon][col] + 1
-                    
-
-
-                    if(sen_flag):
-                        date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
-                        sen_flag = 0
-                        receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
-
-
             if(numbatch % CHECKPOINT_INTERVAL == 0):
-
                 strcurrent = "." + str(current)
-                datecat = DATECAT_FILE
                 with open(CHECKPOINT_FILE, "wb") as myFile:
                     pickle.dump(current, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-                with open(datecat, "wb") as myFile:
-                    pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
                 sen = UNIQUESENDERS + strcurrent
                 with open(sen, "wb") as myFile:
-                    pickle.dump(unique_senders, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-
-                recv = RECEIVER_FILE + strcurrent
-                with open(recv, "wb") as myFile:
-                    pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-
-                df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=sens_cols)
-                df_stat = df_stat.rename_axis('Date').reset_index()
-                df_stat.to_csv(sys.argv[2] + "sen.output", index=False)
-
-             
-                outputfile1 = open(sys.argv[2] + "recv.output","w")
-                outputfile1.write("TRANSACTIONS PROCESSED TILL NOW = " + str(current) + "\n")
-                rcnt=-1
-                for k,v in receiver.items():
-                    if(v is None):
-                        continue
-                    rcnt = rcnt + 1
-                    s = ""
-                    try:
-                        s = str(rcnt) + "|"
-                        if('joined' in receiver[k]):
-                            s = s + str(receiver[k]['joined'])
-                        s = s + "|"
-
-                        if('dates' in receiver[k]):
-                            for kk,vv in receiver[k]['dates'].items():
-                                s = s + str(kk)
-                                for kkk,vvv in sorted(vv.items()):
-                                    s = s + "," + str(kkk) + ":" +  str(vvv)
-                                s = s + ";"
-
-                        outputfile1.write(s + "\n")
-                    except:
-                        continue
-       
-                outputfile1.close()
-                receiver.clear()
-                unique_senders.clear()
+                    pickle.dump(unique, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
         cnt = cnt + 1
 
 
     except Exception as e:
-        print(e)
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(exc_type, fname, exc_tb.tb_lineno)
         continue        
 f.close()
 
 # Last batch
-if cnt != 0:
-    del dates[cnt:]
-    del notes[cnt:]
-    c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
-    table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9)
-    table = list(table)
-    table = [list(r) for r in table]
-    test_preds = pd.DataFrame(np.array(table), columns=cols_name)
-    test_input_ids = []
-    test_attention_masks = []
-
-    for sent in test_preds['Note']:
-        encoded_dict = tokenizer.encode_plus(
-                            sent,                      # Sentence to encode.
-                            add_special_tokens = True, # Add '[CLS]' and '[SEP]'
-                            truncation='longest_first',
-                            max_length = MAX_LEN,           # Pad & truncate all sentences.
-                            pad_to_max_length = True,
-                            return_attention_mask = True,   # Construct attn. masks.
-                            # return_tensors = 'tf',     # Return tensorflow tensor.
-                       )
-        test_input_ids.append(encoded_dict['input_ids'])
-        test_attention_masks.append(encoded_dict['attention_mask'])
-
-
-    test_dataset = create_dataset((test_input_ids, test_attention_masks), epochs=1, batch_size=32, train=False)
-    # prediction
-    for i, (token_ids, masks) in enumerate(test_dataset):
-        start = i * TEST_BATCH
-        end = (i+1) * TEST_BATCH - 1
-        predictions = saved_model(token_ids, attention_mask=masks).numpy()
-        binary_predictions = np.where(predictions > 0.5, 1, 0)
-        test_preds.loc[start:end, label_cols] = binary_predictions
-
-    for index, row in test_preds.iterrows():
-        sen_flag = 1
-        date = str(row['Date'])
-        un = str(row['uname'])
-        tun = str(row['tuname'])
-        mon = str(row['myr'])
-
-        if date not in date_category_stat:
-            date_category_stat[date] = {col:0 for col in sens_cols}
-        for col in label_cols:
-            if row[col] == 0:
-                continue
-            date_category_stat[date][col] = date_category_stat[date][col] + 1
-
-            if(mon not in receiver[tun]['dates']):
-                receiver[tun]['dates'][mon] = {col:0 for col in userfields}
-            receiver[tun]['dates'][mon][col] = receiver[tun]['dates'][mon][col] + 1
-
-
-            if(sen_flag):
-                date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
-                sen_flag = 0
-                receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
 
 strcurrent = "." + str(transactions)
-datecat = DATECAT_FILE
-dateper  = DATEPER_FILE
 with open(CHECKPOINT_FILE, "wb") as myFile:
     pickle.dump(transactions, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-with open(datecat, "wb") as myFile:
-    pickle.dump(date_category_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-recv = RECEIVER_FILE + strcurrent
-with open(recv, "wb") as myFile:
-    pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-
 sen = UNIQUESENDERS + strcurrent
 with open(sen, "wb") as myFile:
-    pickle.dump(unique_senders, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-
-    
-# Write stats
-
-df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=sens_cols)
-df_stat = df_stat.rename_axis('Date').reset_index()
-df_stat.to_csv(sys.argv[2] + "sen.output", index=False)
+    pickle.dump(unique, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
 
-outputfile1 = open(sys.argv[2] + "recv.output","w")
-outputfile1.write("TRANSACTIONS PROCESSED TILL NOW = " + str(transactions) + "\n")
+outputfile1 = open(sys.argv[2] + "GAMBLING.txt","w")
 
-
-rcnt=-1
-for k,v in receiver.items():
-    if(v is None ):
+scount = -1
+for k,v in unique.items():
+    tusername = k
+    if("AA-U" in filter_users[tusername]['C'] or "AA-N" in filter_users[tusername]['C']):
         continue
-    rcnt = rcnt + 1
-    s = ""
-    try:
-        s = str(rcnt) + "|"
-        if('joined' in receiver[k]):
-            s = s + str(receiver[k]['joined'])
-        s = s + "|"
+    scount = scount + 1
 
-        if('dates' in receiver[k]):
-            for kk,vv in receiver[k]['dates'].items():
-                s = s + str(kk)
-                for kkk,vvv in sorted(vv.items()):
-                    s = s + "," + str(kkk) + ":" +  str(vvv)
-                s = s + ";"
+    s = str(scount) + "|" + str(len(v)) + "|"
+    tot = {'TG':0,'Poker':0,'Gamble':0, 'Casino':0, 'betting':0, 'play':0, 'Lottery':0, 'date':0, 'greeting/gratitude':0, 'only emoji':0, 'N':0,'T':0, 'Email':0, 'Money':0}
+    for kk,vv in sorted(v.items()):
+        for kkk, vvv in sorted(vv.items()):
+            tot[kkk] += vvv
 
-        outputfile1.write(s + "\n")
-    except:
+    for key, val in sorted(tot.items()):
+        s += key + "|" + str(val) + "|"
+
+    per = int((tot['TG']/tot['T'])* 100.0)
+    s += str(per) + "|"
+    outputfile1.write(s + "\n")
+
+outputfile1.close()
+
+outputfile1 = open(sys.argv[2] + "AA.txt","w")
+for k,v in unique.items():
+
+    tusername = k 
+    if(not("AA-U" in filter_users[tusername]['C'] or "AA-N" in filter_users[tusername]['C'])):
         continue
+    scount = scount + 1
+    s = str(scount) + "|" + str(len(v)) + "|"
+    tot = {'TAA':0, 'AA':0,'Tradition':0,'Lunch Bunch':0,'Book Study':0,'Early Bird':0,'Eye Opener':0, 'Attitude':0, 'O' : 0, 'N':0,'T':0, '11 step':0 ,'meeting':0, 'dues':0, 'donation':0, 'only emoji':0, 'greeting/gratitude':0 , 'date':0}
+    for kk,vv in sorted(v.items()):
+        for kkk, vvv in sorted(vv.items()):
+            tot[kkk] += vvv
 
+    for key, val in sorted(tot.items()):
+        s += key + "|" + str(val) + "|"
+
+    per = int((tot['TAA']/tot['T'])* 100.0)
+    s += str(per) + "|"
+
+    outputfile1.write(s + "\n")
 outputfile1.close()
