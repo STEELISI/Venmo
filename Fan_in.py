@@ -10,7 +10,7 @@ if(len(sys.argv) != 4):
     print("========================================================================================================")
     print("SORRY!! Please provide the path to the INPUT json file, the OUTPUT file, alphabet selection number [0-5]")
     print("========================================================================================================")
-    print("Example: python3 BERT_Classification_script.py ./dummy.json ./output.txt 2                              ")
+    print("Example: python3 Fan_in.py  ./dummy.json ./output.txt 2                                                 ")
     print("========================================================================================================")
     sys.exit()
 
@@ -24,7 +24,6 @@ if(index < 0 or index > 5):
 for line in f:
     data = json.loads(line)
     try:
-
 
         if(data is None or data['created_time'] is None):
             continue
@@ -40,7 +39,7 @@ for line in f:
             continue 
         if(index == 5 and (ltuser >= 'a' or ltuser <= 'z')):
             continue
-
+        print(tusername,username)
         if(tusername not in unique):
             unique[tusername] = {'T':0,'users':set()}
         if(username not in unique[tusername]):
