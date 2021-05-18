@@ -39,7 +39,6 @@ for line in f:
             continue 
         if(index == 5 and (ltuser >= 'a' or ltuser <= 'z')):
             continue
-        print(tusername,username)
         if(tusername not in unique):
             unique[tusername] = {'T':0,'users':set()}
         if(username not in unique[tusername]):
