@@ -95,18 +95,18 @@ outputfile1 = open(write_path + 'receiver_summary.txt.'  +  str(merge_version) ,
 rcnt = -1
 
 for k,v in receiver_final_stat.items():
-    if(v is None or k is None or k in sender_final_stat):
-        continue
-
-    x = ""
-    y = 1
-    for c in k:
-        x += str((int(int(ord(c))/NUMBER_1) + NUMBER_2))
-    y = int(x)*NUMBER_3
-    rcnt = (y + NUMBER_4)
-
-    s = ""
     try:
+        if(v is None or k is None or k in sender_final_stat):
+            continue
+    
+        x = ""
+        y = 1
+        for c in k:
+            x += str((int(int(ord(c))/NUMBER_1) + NUMBER_2))
+        y = int(x)*NUMBER_3
+        rcnt = (y + NUMBER_4)
+    
+        s = ""
         s = str(rcnt) + "|"
         if('joined' in receiver_final_stat[k]):
             s = s + str(receiver_final_stat[k]['joined'])
