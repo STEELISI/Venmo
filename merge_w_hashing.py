@@ -49,17 +49,17 @@ outputfile = open(write_path + 'sender_summary.txt.' +  str(merge_version) , "w"
 scnt = -1
 
 for k,v in sender_final_stat.items():
-    if(v is None or k is None):
-        continue
-
-    x = ""
-    y = 1
-    for c in k:
-        x += str((int(int(ord(c))/NUMBER_1) + NUMBER_2))
-    y = int(x)*NUMBER_3
-    scnt = (y + NUMBER_4)
-    s = ""
     try:
+        if(v is None or k is None):
+            continue
+    
+        x = ""
+        y = 1
+        for c in k:
+            x += str((int(int(ord(c))/NUMBER_1) + NUMBER_2))
+        y = int(x)*NUMBER_3
+        scnt = (y + NUMBER_4)
+        s = ""
         s = str(scnt) + "|"
         if('joined' in sender_final_stat[k]):
             s = s + str(sender_final_stat[k]['joined'])
