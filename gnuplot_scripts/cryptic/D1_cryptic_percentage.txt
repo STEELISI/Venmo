@@ -73,5 +73,3 @@ January-2018 54 100
 February-2018 55 100
 March-2018 55 100
 April-2018 55 100
-July-2018 56 100
-August-2018 54 100
