@@ -62,7 +62,7 @@ for k,v in unique.items():
 outputfile1.close()
 
 
-AAcols = " USER ID (1)|#SENDERS (2)|11 step (3)| AA (4)| Attitude (5)| Book Study (6)| Early Bird (7)| Eye Opener (8)| Lunch Bunch (9)| Non-AA Trans (10)| Other AA (11)| Total Transactions (12)| Total AA Transactions (13)| Tradition (14) | dates (15) | donation (16) | dues (17) | greeting/gratitude (18) | meeting (19) | only emoji (20) | Percentage of G Trans (21) | #SENDERS with no sensitive posts (22) | CATEGORY (23)"
+AAcols = " USER ID (1)|#SENDERS (2)|11 step (3)| AA (4)| Attitude (5)| Book Study (6)| Early Bird (7)| Eye Opener (8)| Lunch Bunch (9)| Non-AA Trans (10)| Other AA (11)| Total Transactions (12)| Total AA Transactions (13)| Tradition (14) | dates (15) | donation (16) | dues (17) | greeting/gratitude (18) | meeting (19) | only emoji (20) | Percentage of AA Trans (21) | #SENDERS with no sensitive posts (22) | CATEGORY (23)"
 
 outputfile1 = open(sys.argv[1] + "AA.txt","w")
 
