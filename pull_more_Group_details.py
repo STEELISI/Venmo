@@ -44,7 +44,7 @@ for k,v in unique.items():
     for kk,vv in sorted(v.items()):
         for kkk, vvv in sorted(vv.items()):
             tot[kkk] += vvv
-            if(kkk == 'TG' and vvv > 0):
+            if(kkk == 'TG' and vvv == 0):
                 senders_no_posts += 1
 
     for key, val in sorted(tot.items()):
@@ -81,7 +81,7 @@ for k,v in unique.items():
     for kk,vv in sorted(v.items()):
         for kkk, vvv in sorted(vv.items()):
             tot[kkk] += vvv
-            if(kkk == 'TAA' and vvv > 0):
+            if(kkk == 'TAA' and vvv == 0):
                 senders_no_posts += 1
 
     for key, val in sorted(tot.items()):
