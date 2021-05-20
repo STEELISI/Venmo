@@ -1,3 +1,11 @@
+#============================================================================================================#
+#*******************************   HOW TO RUN?  ************************************************************ #
+# python3 pull_more_Group_details.py  <path to the output file>                                              #
+#*********************************************************************************************************** #
+# Example:                                                                                                   #
+# python3 pull_more_Group_details.py ./output                                                                #
+#============================================================================================================#
+
 import os
 import sys
 import pickle
@@ -8,6 +16,19 @@ transactions = 0
 UNIQUESENDERS = "checkpoint/unique.txt"
 CHECKPOINT_FILE = "checkpoint/current.txt"
 USERS_FILE = "checkpoint_part1/PARTIAL_OUTPUT.txt"
+
+
+
+if(len(sys.argv) != 1):
+    print("==========================================================================")
+    print("SORRY!! Please provide the path to the INPUT json file and the OUTPUT file")
+    print("==========================================================================")
+    print("Example: python3 BERT_Classification_script.py ./dummy.json ./output.txt  ")
+    print("==========================================================================")
+    sys.exit()
+
+
+
 
 
 if(os.path.exists(CHECKPOINT_FILE)):
