@@ -19,7 +19,7 @@ USERS_FILE = "checkpoint_part1/PARTIAL_OUTPUT.txt"
 
 
 
-if(len(sys.argv) != 1):
+if(len(sys.argv) != 2):
     print("==========================================================================")
     print("SORRY!! Please provide the  OUTPUT file")
     print("==========================================================================")
