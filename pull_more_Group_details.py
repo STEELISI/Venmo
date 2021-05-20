@@ -76,6 +76,8 @@ for k,v in unique.items():
     scount = scount + 1
     s = str(scount) + "|" + str(len(v)) + "|"
     tot = {'TAA':0, 'AA':0,'Tradition':0,'Lunch Bunch':0,'Book Study':0,'Early Bird':0,'Eye Opener':0, 'Attitude':0, 'O' : 0, 'N':0,'T':0, '11 step':0 ,'meeting':0, 'dues':0, 'donation':0, 'only emoji':0, 'greeting/gratitude':0 , 'date':0}
+
+    senders_no_posts = 0
     for kk,vv in sorted(v.items()):
         for kkk, vvv in sorted(vv.items()):
             tot[kkk] += vvv
