@@ -25,7 +25,7 @@ with open(f, "rb") as myFile:
 
 
 
-outputfile1 = open(sys.argv[2] + "GAMBLING.txt","w")
+outputfile1 = open(sys.argv[1] + "GAMBLING.txt","w")
 
 gamcols = " USER ID (1)|#SENDERS (2)|Casino (3)| Email (4)| Gamble (5)| Lottery (6)| Money (7) | Non-Gambling (8) | Poker (9) | Total Transactions (10) | Total Gambling Transactions (11) | betting (12) | dates (13) | greeting/gratitude (14) | only emoji (15) | play (16) | Percentage of G Trans (17) | #SENDERS with no sensitive posts (18) | CATEGORY (19)"
 
@@ -64,7 +64,7 @@ outputfile1.close()
 
 AAcols = " USER ID (1)|#SENDERS (2)|11 step (3)| AA (4)| Attitude (5)| Book Study (6)| Early Bird (7)| Eye Opener (8)| Lunch Bunch (9)| Non-AA Trans (10)| Other AA (11)| Total Transactions (12)| Total AA Transactions (13)| Tradition (14) | dates (15) | donation (16) | dues (17) | greeting/gratitude (18) | meeting (19) | only emoji (20) | Percentage of G Trans (21) | #SENDERS with no sensitive posts (22) | CATEGORY (23)"
 
-outputfile1 = open(sys.argv[2] + "AA.txt","w")
+outputfile1 = open(sys.argv[1] + "AA.txt","w")
 
 outputfile1.write(AAcols + "\n")
 
