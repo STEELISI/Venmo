@@ -1,9 +1,9 @@
 #=================================================================================================================#
 #*******************************   HOW TO RUN?  ***************************************************************** #
-# python3 datewise_textual_transactions_count_2020.py <path to the input 2020 csv file>  <path to the output file>#
+# python3 2020_enchant.py <path to the input 2020 csv file>  <path to the output file>#
 #*****************************************************************************************************************#
 # Example:                                                                                                        #
-#python3 datewise_textual_transactions_count_2020.py /Users/rajattan/venmo/dummy.csv ./transactions_date_wise.txt #
+#python3 2020_enchant.py /Users/rajattan/venmo/dummy.csv ./transactions_date_wise.txt #
 #=================================================================================================================#
 
 import re
