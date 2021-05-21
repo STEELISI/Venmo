@@ -2,5 +2,3 @@ Date AC E I PH AD
 July-18 3 134 212 336 586
 August-18 12 601 980 1603 2690
 October-18 8 624 971 1781 2619
-January-19 0 17 29 42 76
-February-19 0 7 8 18 34
