@@ -106,7 +106,7 @@ with open(PATH_TO_INTERJECTIONS_LIST,'r') as fp:
 # L4 - 21 to 30 | L5 - 31 to 50 | L6 - 50+                                          #                       
 # E - English
 #===================================================================================#
-userfields = ['A','AL', 'C', 'E' ,'ET','OE', 'NC', 'L1', 'L2' , 'L3' , 'L4' , 'L5' , 'L6']
+userfields = ['A','AL', 'C', 'E' ,'ET','OE', 'NC']
 dic = enchant.Dict("en_US")
 #===================================================================================#
 '''
@@ -166,7 +166,8 @@ def remove_interjections(tokens):
 Preprocessing Work 
 """
 def preprocessing(origtokens):
-    tokens = convert_letters(origtokens)
+    tokens = remove_blanc(origtokens)
+    tokens = convert_letters(tokens)
     tokens = remove_stopwords(tokens)
     tokens = remove_interjections(tokens)
     tokens = reduce_lengthening(tokens)
@@ -266,38 +267,8 @@ for line in f:
 
         cryptic = 0
 
-        if(length <= 5):
-            sender[username]['dates'][month]['L1'] += 1
-            date_personal_stat[date[0]]['L1'] += 1
-            receiver[tusername]['dates'][month]['L1'] += 1
-
-        elif(length > 5 and length <= 10):
-            sender[username]['dates'][month]['L2'] += 1
-            date_personal_stat[date[0]]['L2'] += 1
-            receiver[tusername]['dates'][month]['L2'] += 1
-
-        elif(length > 10 and length <= 20):
-            sender[username]['dates'][month]['L3'] += 1
-            date_personal_stat[date[0]]['L3'] += 1
-            receiver[tusername]['dates'][month]['L3'] += 1
-
-        elif(length > 20 and length <= 30):
-            sender[username]['dates'][month]['L4'] += 1
-            date_personal_stat[date[0]]['L4'] += 1
-            receiver[tusername]['dates'][month]['L4'] += 1
-
-        elif(length > 30 and length <= 50):
-            sender[username]['dates'][month]['L5'] += 1
-            date_personal_stat[date[0]]['L5'] += 1
-            receiver[tusername]['dates'][month]['L5'] += 1
+        if(length > 30):
             cryptic = 1
-
-        else:
-            sender[username]['dates'][month]['L6'] += 1
-            date_personal_stat[date[0]]['L6'] += 1
-            receiver[tusername]['dates'][month]['L6'] += 1
-            cryptic = 1
-
         
         english = 0
         if(english_ch.search(note) is not None):
@@ -308,20 +279,26 @@ for line in f:
 
         tokens_partial = preprocessing(origtokens)
 
-
+        only_emojis = 0
         for t in tokens_partial:
-            if(is_emoji(t)):
+            if(emoji.emoji_count(t) > 0):
                 if(english == 1):
                     sender[username]['dates'][month]['ET'] += 1
                     date_personal_stat[date[0]]['ET'] += 1
                     receiver[tusername]['dates'][month]['ET'] += 1
+                    break
                 else:
-                    sender[username]['dates'][month]['OE'] += 1
-                    date_personal_stat[date[0]]['OE'] += 1
-                    receiver[tusername]['dates'][month]['OE'] += 1
-                break
+                    only_emojis += 1
+        if(only_emojis == len(tokens_partial)):
+            cryptic = 1
+            if(only_emojis > 0):
+                sender[username]['dates'][month]['OE'] += 1
+                date_personal_stat[date[0]]['OE'] += 1
+                receiver[tusername]['dates'][month]['OE'] += 1
+                cryptic = 1
+
         kod = 0
-        if(cryptic == 0):
+        if(cryptic == 0 and (english == 1)):
             tokens = preprocessing_cntd(tokens_partial)
             if(len(tokens) == 0):
                 cryptic = 1

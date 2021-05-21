@@ -30,11 +30,11 @@ set label "D1" at graph 0.4, 0.95
 set label "D2" at graph 0.71, 0.95
 set label "D3" at graph 0.9, 0.95
 set y2tics
+set y2range [10:20]
 set y2label "Percentage"
-set y2range [0:30]
 
-plot "cryptic.txt" using 1:3 t "Total notes" with boxes lc 'grey', \
-     "cryptic.txt" using 1:(\$3-\$2) t "Cryptic notes" with boxes lc 'pink', \
-     "cpercentage.txt" using 1:(\$3-\$2) t "Percentage" w points lc -1 axes x1y2
+plot "../Fig4/cryptic_vs_public.txt" using 1:3 t "Public notes" with boxes lc 'grey', \
+     "../Fig4/cryptic_vs_public.txt" using 1:2 t "Cryptic notes" with boxes lc 'pink', \
+     "../Fig4/cryptic_vs_public.txt" u 1:4 t "Percentage" w p lc -1 axes x1y2
 
 EOFMarker

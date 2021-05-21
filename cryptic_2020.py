@@ -107,7 +107,7 @@ with open(PATH_TO_INTERJECTIONS_LIST,'r') as fp:
 # L4 - 21 to 30 | L5 - 31 to 50 | L6 - 50+                                          #                       
 # E - English
 #===================================================================================#
-userfields = ['A','AL', 'C', 'E' ,'ET','OE', 'NC', 'L1', 'L2' , 'L3' , 'L4' , 'L5' , 'L6']
+userfields = ['A','AL', 'C', 'E' ,'ET','OE', 'NC']
 dic = enchant.Dict("en_US")
 #===================================================================================#
 '''
@@ -170,7 +170,8 @@ Preprocessing Work
 """
 
 def preprocessing(origtokens):
-    tokens = convert_letters(origtokens)
+    tokens = remove_blanc(origtokens)
+    tokens = convert_letters(tokens)
     tokens = remove_stopwords(tokens)
     tokens = remove_interjections(tokens)
     tokens = reduce_lengthening(tokens)
@@ -206,7 +207,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
     for row in chunk.itertuples():
         transactions = transactions + 1
         try:
-            if(transactions < current or len(row) != 9):
+            if(transactions < current or len(row) < 9):
                 continue
             username = row[5]
             tusername = row[6]
@@ -222,7 +223,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                 sender[username] = {}
                 sender[username]['dates'] = {}
                 t = str(row[7])
-                s = datetime.datetime.fromtimestamp(int(t))
+                s = datetime.datetime.fromtimestamp(float(t))
                 da = s.strftime("%Y-%m-%dT")
                 d = da.split("T")
                 sender[username]['joined'] = d[0]
@@ -235,7 +236,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                 receiver[tusername] = {}
                 receiver[tusername]['dates'] = {}
                 t = str(row[8])
-                s = datetime.datetime.fromtimestamp(int(t))
+                s = datetime.datetime.fromtimestamp(float(t))
                 da = s.strftime("%Y-%m-%dT")
                 d = da.split("T")
                 receiver[tusername]['joined'] = d[0]
@@ -264,31 +265,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
  
             cryptic = 0
 
-            if(length <= 5):
-                sender[username]['dates'][month]['L1'] += 1
-                date_personal_stat[date[0]]['L1'] += 1
-                receiver[tusername]['dates'][month]['L1'] += 1
-            elif(length > 5 and length <= 10):
-                sender[username]['dates'][month]['L2'] += 1
-                date_personal_stat[date[0]]['L2'] += 1
-                receiver[tusername]['dates'][month]['L2'] += 1
-            elif(length > 10 and length <= 20):
-                sender[username]['dates'][month]['L3'] += 1
-                date_personal_stat[date[0]]['L3'] += 1
-                receiver[tusername]['dates'][month]['L3'] += 1
-            elif(length > 20 and length <= 30):
-                sender[username]['dates'][month]['L4'] += 1
-                date_personal_stat[date[0]]['L4'] += 1
-                receiver[tusername]['dates'][month]['L4'] += 1
-            elif(length > 30 and length <= 50):
-                sender[username]['dates'][month]['L5'] += 1
-                date_personal_stat[date[0]]['L5'] += 1
-                receiver[tusername]['dates'][month]['L5'] += 1
-                cryptic = 1
-            else:
-                sender[username]['dates'][month]['L6'] += 1
-                date_personal_stat[date[0]]['L6'] += 1
-                receiver[tusername]['dates'][month]['L6'] += 1
+            if(length > 30):
                 cryptic = 1
 
             english = 0
@@ -299,19 +276,26 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                 date_personal_stat[date[0]]['E'] += 1
             tokens_partial = preprocessing(origtokens)         
 
+            only_emojis = 0
             for t in tokens_partial:
-                if(is_emoji(t)):
+                if(emoji.emoji_count(t) > 0):
                     if(english == 1):
                         sender[username]['dates'][month]['ET'] += 1
                         date_personal_stat[date[0]]['ET'] += 1
                         receiver[tusername]['dates'][month]['ET'] += 1
+                        break
                     else:
-                        sender[username]['dates'][month]['OE'] += 1
-                        date_personal_stat[date[0]]['OE'] += 1
-                        receiver[tusername]['dates'][month]['OE'] += 1
-                    break
+                        only_emojis += 1
+
+            if(only_emojis == len(tokens_partial)):
+                cryptic = 1
+                if(only_emojis > 0):
+                    sender[username]['dates'][month]['OE'] += 1
+                    date_personal_stat[date[0]]['OE'] += 1
+                    receiver[tusername]['dates'][month]['OE'] += 1
+
             kod = 0
-            if(cryptic == 0):
+            if(cryptic == 0 and (english == 1)):
                 tokens = preprocessing_cntd(tokens_partial)
                 if(len(tokens) == 0):
                     cryptic = 1
