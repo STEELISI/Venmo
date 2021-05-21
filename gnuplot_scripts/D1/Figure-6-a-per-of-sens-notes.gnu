@@ -21,7 +21,7 @@ set style fill solid 1.0 border -1
 set yrange [0:35]
 set ytics 10
 
-plot 'sensitive.txt' using 2:xticlabels(strstrt(strcol(1),'March')?strcol(1):'') t "Percentage of sensitive/personal notes (Notes in English)" with boxes lc 2, 'sensitive.txt' using 3:xticlabels(strstrt(strcol(1),'March')?strcol(1):'') t "Percentage of sensitive/personal notes (Total Notes)" with boxes lc 7
+plot '6-a.txt' using 2:xticlabels(strstrt(strcol(1),'March')?strcol(1):'') t "Percentage of sensitive/personal notes (Notes in English)" with boxes lc 2, '6-a.txt' using 3:xticlabels(strstrt(strcol(1),'March')?strcol(1):'') t "Percentage of sensitive/personal notes (Total Notes)" with boxes lc 7
 
 
 

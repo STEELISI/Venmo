@@ -1,7 +1,0 @@
-Month Public Total
-April-2013 17%	83%
-April-2014 25%	75%
-April-2015 29%	100%
-April-2016 34%	100%
-April-2017 37%	100%
-April-2018 36%	100%
