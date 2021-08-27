@@ -3,7 +3,7 @@
 # python3 emoji_2018.py <path to the input json file>  <path to the output file>                             #
 #*********************************************************************************************************** #
 # Example:                                                                                                   #
-#python3 emoji_2018.py /Users/rajattan/venmo/dummy.json ./transactions_date_wise.txt                         #
+#python3 emoji_2018.py /Users/rajattan/venmo/dummy.json ./output.txt                                         #
 #============================================================================================================#
 import re
 import sys
@@ -22,7 +22,7 @@ from nltk import tokenize
 
 
 #===============================================================#
-BATCH = 5000
+BATCH = 10000000
 #===============================================================#
 current = 0
 numbatch = 0
