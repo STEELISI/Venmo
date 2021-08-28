@@ -1,9 +1,9 @@
 #============================================================================================================#
 #*******************************   HOW TO RUN?  ************************************************************ #
-# python3 emoji_2020.py <path to the input json file>  <path to the output file>    #
+# python3 total_emoji_2020.py <path to the input json file>  <path to the output file>    #
 #*********************************************************************************************************** #
 # Example:                                                                                                   #
-# python3 emoji_2020.py  /Users/rajattan/venmo/dummy.json ./output.txt   #
+# python3 total_emoji_2020.py  /Users/rajattan/venmo/dummy.json ./output.txt   #
 #============================================================================================================#
 import re
 import sys
