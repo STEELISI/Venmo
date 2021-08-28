@@ -1,9 +1,9 @@
 #============================================================================================================#
 #*******************************   HOW TO RUN?  ************************************************************ #
-# python3 BERT_Classification_Checkpoints.py <path to the input json file>  <path to the output file>    #
+# python3 emoji_2020.py <path to the input json file>  <path to the output file>    #
 #*********************************************************************************************************** #
 # Example:                                                                                                   #
-# python3 cryptic_2020.py  /Users/rajattan/venmo/dummy.json ./transactions_date_wise.txt   #
+# python3 emoji_2020.py  /Users/rajattan/venmo/dummy.json ./output.txt   #
 #============================================================================================================#
 import re
 import sys
