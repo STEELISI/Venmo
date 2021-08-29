@@ -329,15 +329,22 @@ for k,v in unique.items():
 
     s = str(scount) + "|" + str(len(v)) + "|"
     tot = {'TB':0,'Gang':0,'Helper':0,'N':0,'T':0}
+    senders_no_posts = 0
+
     for kk,vv in sorted(v.items()):
         for kkk, vvv in sorted(vv.items()):
             tot[kkk] += vvv
+            if(kkk == 'TB' and vvv == 0):
+                senders_no_posts += 1
 
     for key, val in sorted(tot.items()):
         s += key + "|" + str(val) + "|"
 
     per = int((tot['TB']/tot['T'])* 100.0)
     s += str(per) + "|"
+    s += str(senders_no_posts) + "|"
+    for l in filter_users[k]['C']:
+        s += l + " "
     outputfile1.write(s + "\n")
 
 outputfile1.close()
@@ -351,15 +358,20 @@ for k,v in unique.items():
     scount = scount + 1
     s = str(scount) + "|" + str(len(v)) + "|"
     tot = {'TB':0,'Gang':0,'Helper':0,'N':0,'T':0}
+    senders_no_posts = 0
     for kk,vv in sorted(v.items()):
         for kkk, vvv in sorted(vv.items()):
             tot[kkk] += vvv
+            if(kkk == 'TB' and vvv == 0):
+                senders_no_posts += 1
 
     for key, val in sorted(tot.items()):
         s += key + "|" + str(val) + "|"
 
     per = int((tot['TB']/tot['T'])* 100.0)
     s += str(per) + "|"
-
+    s += str(senders_no_posts) + "|"
+    for l in filter_users[k]['C']:
+        s += l + " "
     outputfile1.write(s + "\n")
 outputfile1.close()
