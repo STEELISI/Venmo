@@ -3,12 +3,12 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-model_version = 'BERT_MODEL/checkpoint_EPOCHS_6a'
-label_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
-cols_to_use = ['Note','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
+model_version = 'BERT_MODEL/checkpoint_EPOCHS_6m'
+label_cols = ['LGBTQ','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
+cols_to_use = ['Note','LGBTQ','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 
-test_path = 'BERT_MODEL/Preprocessed_Final_Testing_Set.csv'
-validate_path = 'Classification_Files/Classified_EPOCHS_6a.csv'
+test_path = 'BERT_MODEL/Preprocessed_Testing.csv'
+validate_path = 'Classification_Files/Classified_EPOCHS_6m.csv'
 df_label_validate = pd.read_csv(test_path,  usecols= cols_to_use)
 
 
@@ -187,4 +187,3 @@ for col in label_cols:
     print('=== {} ==='.format(col))
     print('true negative : {}/{} = {}'.format(c, n, str(c/n)))
     print('false positive : {}/{} = {}'.format(n - c, n, str(1 - c/n)))
-

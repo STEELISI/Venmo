@@ -4,11 +4,11 @@ import tensorflow as tf
 
 
 BATCH_SIZE = 32
-NR_EPOCHS = 4
+NR_EPOCHS = 6
 
-train_path = 'BERT_MODEL/Preprocessed_Final_Training_Set.csv'
-label_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
-cols_to_use = ['Note','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
+train_path = 'BERT_MODEL/Preprocessed_Training.csv'
+label_cols = ['LGBTQ','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
+cols_to_use = ['Note','LGBTQ','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 
 df_train = pd.read_csv(train_path, usecols= cols_to_use)
 sentences = df_train['Note']
@@ -25,7 +25,7 @@ n = 0
 s = 0
 
 for sent in sentences:
-
+    #print(sent)
     input_ids = tokenizer.encode(sent, add_special_tokens=True)
     s = s + len(input_ids)
     max_len = max(max_len, len(input_ids))
@@ -35,7 +35,7 @@ print('Number of sentences: ', n)
 print('Max sentence length: ', max_len)
 print('Avg sentence length: ', s/n)
 
-MAX_LEN = 10
+MAX_LEN = 30
 
 input_ids = []
 attention_masks = []
@@ -59,8 +59,8 @@ print(attention_masks[:5])
 
 from sklearn.model_selection import train_test_split
 
-train_inputs, validation_inputs, train_labels, validation_labels = train_test_split(input_ids, labels, random_state=39, test_size=0.001)
-train_masks, validation_masks, _, _ = train_test_split(attention_masks, labels, random_state=39, test_size=0.001)
+train_inputs, validation_inputs, train_labels, validation_labels = train_test_split(input_ids, labels, random_state=39, test_size=0.1)
+train_masks, validation_masks, _, _ = train_test_split(attention_masks, labels, random_state=39, test_size=0.1)
 
 train_size = len(train_inputs)
 print('Training size: ', train_size)
@@ -82,7 +82,7 @@ train_dataset = create_dataset((train_inputs, train_masks, train_labels), epochs
 print(type(train_dataset))
 validation_dataset = create_dataset((validation_inputs, validation_masks, validation_labels), epochs=1, batch_size=32)
 
-label_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
+label_cols = ['LGBTQ','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 
 from transformers import TFBertModel
 from tensorflow.keras.layers import Dense, Flatten
@@ -182,5 +182,5 @@ def train(model, train_dataset, val_dataset, train_steps_per_epoch, val_steps_pe
 
 train(model, train_dataset, validation_dataset, train_steps_per_epoch=steps_per_epoch, val_steps_per_epoch=validation_steps, epochs=NR_EPOCHS)
 
-model.save_weights('BERT_MODEL/checkpoint_EPOCHS_6a')
+model.save_weights('BERT_MODEL/checkpoint_EPOCHS_6m')
 print("DONE!")
