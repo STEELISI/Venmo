@@ -47,13 +47,13 @@ date_personal_stat = {}
 
 #===============================================================#
 TEST_BATCH = 32
-SENDER_FILE = "checkpoint_Nov21/sender.txt"
-#RECEIVER_FILE = "checkpoint_Nov21/receiver.txt"
-CHECKPOINT_FILE = "checkpoint_Nov21/current.txt"
+SENDER_FILE = "checkpoint/sender.txt"
+#RECEIVER_FILE = "checkpoint/receiver.txt"
+CHECKPOINT_FILE = "checkpoint/current.txt"
 PATH_TO_STOPWORDS_LIST = "data/STOPWORDS.txt"
-MODEL_FILE = "BERT_MODEL/checkpoint_EPOCHS_6m"
-DATECAT_FILE = "checkpoint_Nov21/date_category_stat.txt"
-DATEPER_FILE = "checkpoint_Nov21/date_personal_stat.txt"
+MODEL_FILE = "BERT_MODEL/checkpoint_EPOCHS_6a"
+DATECAT_FILE = "checkpoint/date_category_stat.txt"
+DATEPER_FILE = "checkpoint/date_personal_stat.txt"
 PATH_TO_KEYWORDS_LIST = "data/UNIQ_KEYWORDS_LIST.txt"
 #===============================================================#
 
