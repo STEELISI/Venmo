@@ -596,8 +596,9 @@ for line in f:
                         outputfile1.write(s + "\n")
                     except:
                         continue
-                '''
+                
                 outputfile1.close()
+                '''
                 sender.clear()
                 #receiver.clear()
 
