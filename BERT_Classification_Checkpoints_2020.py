@@ -25,8 +25,8 @@ from transformers import BertTokenizer
 from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
-MAX_LEN = 10
-BATCH = 50000
+MAX_LEN = 30
+BATCH = 1000
 CHECKPOINT_INTERVAL = 4
 CHUNKSIZE = 1000
 
@@ -42,7 +42,7 @@ tuname = [''] * BATCH
 #===============================================================#
 cnt = 0
 sender = {}
-receiver = {}
+#receiver = {}
 keywords = set()
 stopwords = set()
 date_category_stat = {}
@@ -50,13 +50,13 @@ date_personal_stat = {}
 
 #===============================================================#
 TEST_BATCH = 32
-SENDER_FILE = "checkpoint_2020/sender.txt"
-RECEIVER_FILE = "checkpoint_2020/receiver.txt"
-CHECKPOINT_FILE = "checkpoint_2020/current.txt"
+SENDER_FILE = "checkpoint_20201/sender.txt"
+#RECEIVER_FILE = "checkpoint_20201/receiver.txt"
+CHECKPOINT_FILE = "checkpoint_20201/current.txt"
 PATH_TO_STOPWORDS_LIST = "data/STOPWORDS.txt"
-MODEL_FILE = "BERT_MODEL/checkpoint_EPOCHS_6a"
-DATECAT_FILE = "checkpoint_2020/date_category_stat.txt"
-DATEPER_FILE = "checkpoint_2020/date_personal_stat.txt"
+MODEL_FILE = "BERT_MODEL/checkpoint_EPOCHS_6m"
+DATECAT_FILE = "checkpoint_20201/date_category_stat.txt"
+DATEPER_FILE = "checkpoint_20201/date_personal_stat.txt"
 PATH_TO_KEYWORDS_LIST = "data/UNIQ_KEYWORDS_LIST.txt"
 #===============================================================#
 pattern = re.compile(r"(.)\1{2,}")
@@ -96,23 +96,25 @@ if(os.path.exists(CHECKPOINT_FILE)):
         with open(dateper, "rb") as myFile:
             date_personal_stat = pickle.load(myFile)
 
+        '''
         send = SENDER_FILE + "." + str(current)
         if(not(os.path.exists(send))):
             send = SENDER_FILE
         with open(send, "rb") as myFile:
             sender = pickle.load(myFile)
-
+        
         recv = RECEIVER_FILE + "." + str(current)
         if(not(os.path.exists(recv))):
             recv = RECEIVER_FILE
         with open(recv, "rb") as myFile:
             receiver = pickle.load(myFile)
+        '''
 
-        if(len(date_category_stat) == 0 or len(date_category_stat) == 0 or len(sender) == 0 or len(receiver) == 0):
+        if(len(date_category_stat) == 0 or len(date_category_stat) == 0): # or len(sender) == 0 or len(receiver) == 0):
             print("===================================================================")
             print("****** COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.******")
             print("***                YOU NEED TO RECOMPUTE THINGS AGAIN.          ***")
-            print("***    PLEASE remove the file checkpoint_2020/current.txt and re-run.***")
+            print("***    PLEASE remove the file checkpoint_20201/current.txt and re-run.***")
             print("===================================================================")
             sys.exit()
         else:
@@ -149,13 +151,13 @@ with open(PATH_TO_STOPWORDS_LIST,'r') as fp:
 #===============================================================#
 #c0 = c1 = [' '] * BATCH
 
-cols_name = ['Date', 'Note','myr','uname','tuname','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
+cols_name = ['Date', 'Note','myr','uname','tuname','LGBTQ','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION']
 label_cols = cols_name[5:]  # drop 'Date' & 'Note' (the 2 leftmost columns)
-sens_cols = ['ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','T']
+sens_cols = ['LGBTQ','ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','T']
 
 # Account, Email, Invoice, Personal, Address, Total, Overlap
-personal_cols = ['AC','E','I','PH','AD','TO','O']
-userfields = [ 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','AC','E','I','PH','AD','TO','O','S','P','T','A']
+personal_cols = ['AC','E','I','PH','AD','P']
+userfields = ['LGBTQ', 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','AC','E','I','PH','AD','P','T','A']
 
 bert_model_name = 'bert-base-uncased'
 tokenizer = BertTokenizer.from_pretrained(bert_model_name, do_lower_case=True)
@@ -165,7 +167,7 @@ saved_model.load_weights(MODEL_FILE)
 time.sleep(5)
 print("\n MODEL LOADED\n\n\n\n\n")
 
-c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * (BATCH - 1)
+c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = c10 = [0] * (BATCH - 1)
 #===============================================================#
 
 """
@@ -300,7 +302,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
     for row in chunk.itertuples():
         transactions = transactions + 1
         try:
-            if(transactions < current or len(row) != 9):
+            if(transactions < current or len(row) < 9):
                 continue
             username = row[5]
             tusername = row[6]
@@ -328,6 +330,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                 sender[username]['dates'][month] = {col:0 for col in userfields}
             sender[username]['dates'][month]['A'] = sender[username]['dates'][month]['A'] + 1
 
+            '''
             if(tusername not in receiver):
                 receiver[tusername] = {}
                 receiver[tusername]['dates'] = {}
@@ -340,58 +343,58 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
             if(month not in receiver[tusername]['dates']):
                 receiver[tusername]['dates'][month] = {col:0 for col in userfields}
             receiver[tusername]['dates'][month]['A'] = receiver[tusername]['dates'][month]['A'] + 1
-
+            '''
         
             if(len(origtokens) > 30):
                 continue
  
         
-            if(date[0] not in date_personal_stat):
-                date_personal_stat[date[0]] = {col:0 for col in personal_cols}
+            if(month not in date_personal_stat):
+                date_personal_stat[month] = {col:0 for col in personal_cols}
             per_flag = 0
-            overlap = 0
+            #overlap = 0
 
             if(possible_personal.search(note) or "@" in note or "#" in note):
                 note = note.lower()
                 if(contains_phn(note)):
                     per_flag = 1
-                    overlap = overlap + 1
-                    if('PH' not in date_personal_stat[date[0]]):
-                        date_personal_stat[date[0]]['PH'] = 0
-                    date_personal_stat[date[0]]['PH'] = date_personal_stat[date[0]]['PH'] + 1
+                    #overlap = overlap + 1
+                    if('PH' not in date_personal_stat[month]):
+                        date_personal_stat[month]['PH'] = 0
+                    date_personal_stat[month]['PH'] = date_personal_stat[month]['PH'] + 1
                     sender[username]['dates'][month]['PH'] = sender[username]['dates'][month]['PH'] + 1
 
                 if(contains_email(note)):
                     per_flag = 1
-                    overlap = overlap + 1
-                    if('E' not in date_personal_stat[date[0]]):
-                        date_personal_stat[date[0]]['E'] = 0
-                    date_personal_stat[date[0]]['E'] = date_personal_stat[date[0]]['E'] + 1
+                    #overlap = overlap + 1
+                    if('E' not in date_personal_stat[month]):
+                        date_personal_stat[month]['E'] = 0
+                    date_personal_stat[month]['E'] = date_personal_stat[month]['E'] + 1
                     sender[username]['dates'][month]['E'] = sender[username]['dates'][month]['E'] + 1
 
 
                 if(contains_invoice(note)):
                     per_flag = 1
-                    overlap =  overlap + 1
-                    if('I' not in date_personal_stat[date[0]]):
-                        date_personal_stat[date[0]]['I'] = 0
-                    date_personal_stat[date[0]]['I'] = date_personal_stat[date[0]]['I'] + 1
+                    #overlap =  overlap + 1
+                    if('I' not in date_personal_stat[month]):
+                        date_personal_stat[month]['I'] = 0
+                    date_personal_stat[month]['I'] = date_personal_stat[month]['I'] + 1
                     sender[username]['dates'][month]['I'] = sender[username]['dates'][month]['I'] + 1
 
                 if(contains_address(note)):
                     per_flag = 1
-                    overlap = overlap + 1
-                    if('AD' not in date_personal_stat[date[0]]):
-                        date_personal_stat[date[0]]['AD'] = 0
-                    date_personal_stat[date[0]]['AD'] = date_personal_stat[date[0]]['AD'] + 1
+                    #overlap = overlap + 1
+                    if('AD' not in date_personal_stat[month]):
+                        date_personal_stat[month]['AD'] = 0
+                    date_personal_stat[month]['AD'] = date_personal_stat[month]['AD'] + 1
                     sender[username]['dates'][month]['AD'] = sender[username]['dates'][month]['AD'] + 1
 
             if(contains_acc(note)):
                 per_flag = 1
-                overlap = overlap + 1
-                if('AC' not in date_personal_stat[date[0]]):
-                    date_personal_stat[date[0]]['AC'] = 0
-                date_personal_stat[date[0]]['AC'] = date_personal_stat[date[0]]['AC'] + 1
+                #overlap = overlap + 1
+                if('AC' not in date_personal_stat[month]):
+                    date_personal_stat[month]['AC'] = 0
+                date_personal_stat[month]['AC'] = date_personal_stat[month]['AC'] + 1
                 sender[username]['dates'][month]['AC'] = sender[username]['dates'][month]['AC'] + 1
 
 
@@ -408,13 +411,13 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
 
 
             if(per_flag == 1):
-                date_personal_stat[date[0]]['TO'] = date_personal_stat[date[0]]['TO'] + 1
-                if(overlap > 1):
-                    date_personal_stat[date[0]]['O'] = date_personal_stat[date[0]]['O'] + 1
+                date_personal_stat[month]['P'] = date_personal_stat[month]['P'] + 1
+                #if(overlap > 1):
+                #    date_personal_stat[month]['O'] = date_personal_stat[month]['O'] + 1
                 if(month not in sender[username]['dates']):
                     sender[username]['dates'][month] = {col:0 for col in userfields}
                 sender[username]['dates'][month]['P'] = sender[username]['dates'][month]['P'] + 1
-                sender[username]['dates'][month]['TO'] = sender[username]['dates'][month]['TO'] + 1
+                #sender[username]['dates'][month]['TO'] = sender[username]['dates'][month]['TO'] + 1
 
 
 
@@ -432,7 +435,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
 
             if(flag == 0):
                 continue
-            dates[cnt] = date[0]
+            dates[cnt] = month
             notes[cnt] = note
             myr[cnt] = month
             uname[cnt] = username
@@ -441,7 +444,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                 current = transactions
                 numbatch = numbatch + 1
                 cnt = -1
-                table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9)
+                table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9, c10)
                 table = list(table)
                 table = [list(r) for r in table]
                 test_preds = pd.DataFrame(np.array(table), columns=cols_name)
@@ -490,18 +493,18 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
 
                         if(mon not in sender[un]['dates']):
                             sender[un]['dates'][mon] = {col:0 for col in userfields}
-                        if(mon not in receiver[tun]['dates']):
-                            receiver[tun]['dates'][mon] = {col:0 for col in userfields}
+                        #if(mon not in receiver[tun]['dates']):
+                        #    receiver[tun]['dates'][mon] = {col:0 for col in userfields}
                         sender[un]['dates'][mon][col] = sender[un]['dates'][mon][col] + 1
-                        receiver[tun]['dates'][mon][col] = receiver[tun]['dates'][mon][col] + 1
+                        #receiver[tun]['dates'][mon][col] = receiver[tun]['dates'][mon][col] + 1
 
                         if(sen_flag):
                             date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
                             sen_flag = 0
-                            sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
+                            #sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
                             sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-                            receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
-                            receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
+                            #receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
+                            #receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
 
 
 
@@ -519,9 +522,9 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                     send = SENDER_FILE + strcurrent
                     with open(send, "wb") as myFile:
                         pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-                    recv = RECEIVER_FILE + strcurrent
-                    with open(recv, "wb") as myFile:
-                        pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+                    #recv = RECEIVER_FILE + strcurrent
+                    #with open(recv, "wb") as myFile:
+                    #    pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
 
                     df_stat = pd.DataFrame.from_dict(date_category_stat, orient='index', columns=sens_cols)
                     df_stat = df_stat.rename_axis('Date').reset_index()
@@ -551,6 +554,7 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                                     for kkk,vvv in sorted(vv.items()):
                                         s = s + "," + str(kkk) + ":" +  str(vvv)
                                     s = s + ";"
+                            '''
                             s = s + "|"
                             if(k in receiver and 'dates' in receiver[k]):
                                 for kk,vv in receiver[k]['dates'].items():
@@ -558,13 +562,14 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                                     for kkk,vvv in sorted(vv.items()):
                                         s = s + "," + str(kkk) + ":" +  str(vvv)
                                     s = s + ";"
+                            '''
 
                             outputfile.write(s + "\n")
                         except:
                             continue
 
                     outputfile.close()
-
+                    '''
                     outputfile1 = open(sys.argv[2] + "recv.output","w")
                     rcnt=-1
                     for k,v in receiver.items():
@@ -590,8 +595,9 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
                             continue
        
                     outputfile1.close()
+                    '''
                     sender.clear()
-                    receiver.clear()
+                    #receiver.clear()
 
                 # reset counter
                 #cnt = -1
@@ -611,8 +617,8 @@ for chunk in pd.read_csv(sys.argv[1], chunksize=CHUNKSIZE, error_bad_lines=False
 if cnt != 0:
     del dates[cnt:]
     del notes[cnt:]
-    c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = [0] * cnt
-    table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9)
+    c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = c10 = [0] * cnt
+    table = zip(dates, notes, myr, uname, tuname, c2, c3, c4, c5, c6, c7, c8, c9, c10)
     table = list(table)
     table = [list(r) for r in table]
     test_preds = pd.DataFrame(np.array(table), columns=cols_name)
@@ -660,19 +666,21 @@ if cnt != 0:
 
             if(mon not in sender[un]['dates']):
                 sender[un]['dates'][mon] = {col:0 for col in userfields}
+            '''
             if(mon not in receiver[tun]['dates']):
                 receiver[tun]['dates'][mon] = {col:0 for col in userfields}
+            '''
             sender[un]['dates'][mon][col] = sender[un]['dates'][mon][col] + 1
-            receiver[tun]['dates'][mon][col] = receiver[tun]['dates'][mon][col] + 1
+            #receiver[tun]['dates'][mon][col] = receiver[tun]['dates'][mon][col] + 1
 
 
             if(sen_flag):
                 date_category_stat[date]['T'] = date_category_stat[date]['T'] + 1
                 sen_flag = 0
-                sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
+                #sender[un]['dates'][mon]['S'] = sender[un]['dates'][mon]['S'] + 1
                 sender[un]['dates'][mon]['T'] = sender[un]['dates'][mon]['T'] + 1
-                receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
-                receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
+                #receiver[tun]['dates'][mon]['S'] = receiver[tun]['dates'][mon]['S'] + 1
+                #receiver[tun]['dates'][mon]['T'] = receiver[tun]['dates'][mon]['T'] + 1
 
 strcurrent = "." + str(transactions)
 datecat = DATECAT_FILE
@@ -686,9 +694,11 @@ with open(dateper, "wb") as myFile:
 send = SENDER_FILE + strcurrent
 with open(send, "wb") as myFile:
     pickle.dump(sender, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+'''
 recv = RECEIVER_FILE + strcurrent
 with open(recv, "wb") as myFile:
     pickle.dump(receiver, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+'''
 
 
     
@@ -724,7 +734,7 @@ for k,v in sender.items():
                 for kkk,vvv in sorted(vv.items()):
                     s = s + "," + str(kkk) + ":" +  str(vvv)
                 s = s + ";"
-
+        '''
         s = s + "|"
         if(k in receiver and 'dates' in receiver[k]):
             for kk,vv in receiver[k]['dates'].items():
@@ -732,12 +742,14 @@ for k,v in sender.items():
                 for kkk,vvv in sorted(vv.items()):
                     s = s + "," + str(kkk) + ":" +  str(vvv)
                 s = s + ";"
+        '''
         outputfile.write(s + "\n")
     except:
         continue
 
 outputfile.close()
 
+'''
 outputfile1 = open(sys.argv[2] + "recv.output","w")
 outputfile1.write("TRANSACTIONS PROCESSED TILL NOW = " + str(transactions) + "\n")
 
@@ -766,3 +778,4 @@ for k,v in receiver.items():
         continue
 
 outputfile1.close()
+'''
