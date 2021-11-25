@@ -26,7 +26,7 @@ from tensorflow.keras.layers import Dense, Flatten
 
 #===============================================================#
 MAX_LEN = 30
-BATCH = 1000
+BATCH = 50000
 CHECKPOINT_INTERVAL = 4
 CHUNKSIZE = 1000
 
@@ -50,13 +50,13 @@ date_personal_stat = {}
 
 #===============================================================#
 TEST_BATCH = 32
-SENDER_FILE = "checkpoint_20201/sender.txt"
-#RECEIVER_FILE = "checkpoint_20201/receiver.txt"
-CHECKPOINT_FILE = "checkpoint_20201/current.txt"
+SENDER_FILE = "checkpoint_2020/sender.txt"
+#RECEIVER_FILE = "checkpoint_2020/receiver.txt"
+CHECKPOINT_FILE = "checkpoint_2020/current.txt"
 PATH_TO_STOPWORDS_LIST = "data/STOPWORDS.txt"
 MODEL_FILE = "BERT_MODEL/checkpoint_EPOCHS_6m"
-DATECAT_FILE = "checkpoint_20201/date_category_stat.txt"
-DATEPER_FILE = "checkpoint_20201/date_personal_stat.txt"
+DATECAT_FILE = "checkpoint_2020/date_category_stat.txt"
+DATEPER_FILE = "checkpoint_2020/date_personal_stat.txt"
 PATH_TO_KEYWORDS_LIST = "data/UNIQ_KEYWORDS_LIST.txt"
 #===============================================================#
 pattern = re.compile(r"(.)\1{2,}")
@@ -114,7 +114,7 @@ if(os.path.exists(CHECKPOINT_FILE)):
             print("===================================================================")
             print("****** COULD NOT SUCCESSFULLY LOAD THE CONTENTS USING PICKLE.******")
             print("***                YOU NEED TO RECOMPUTE THINGS AGAIN.          ***")
-            print("***    PLEASE remove the file checkpoint_20201/current.txt and re-run.***")
+            print("***    PLEASE remove the file checkpoint_2020/current.txt and re-run.***")
             print("===================================================================")
             sys.exit()
         else:
