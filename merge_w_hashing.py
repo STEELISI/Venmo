@@ -5,47 +5,52 @@ import sys
 import pickle
 
 sender_final_stat = {}
-receiver_final_stat = {}
-userfields = [ 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','AC','E','I','PH','AD','TO','O','S','P','T','A']
+#receiver_final_stat = {}
+
+userfields = ['LGBTQ', 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','AC','E','I','PH','AD','P','T','A']
+#userfields = [ 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','AC','E','I','PH','AD','TO','O','S','P','T','A']
 
 NUMBER_1 = 5 #set this to any number of your choice between 1 and 9 of your choice
 NUMBER_2 = 371 #set this to any number of your choice between 1 and 999 of your choice 
 NUMBER_3 = 4 #set this to any number of your choice between 1 and 9 of your choice 
 NUMBER_4 = 4 #set this to any number of your choice between 1 and 1000000 of your choice
 
-if(len(sys.argv) != 4):
+if(len(sys.argv) != 3):
     print(len(sys.argv))
     print("==================================================================================")
     print("SORRY!! Please provide the paths to the directories for reading and writing       ")
     print("==================================================================================")
-    print("Example: python3 merge_updated_format.py checkpoint_folder_path  output_file_path ")
+    print("Example: python3 merge_updated_format.py sender_file  output_file_path ")
     print("==================================================================================")
     sys.exit()
 
 read_path = sys.argv[1]	# i.e. '/venmo/read/'
 write_path = sys.argv[2] # i.e. '/venmo/write/'
-merge_version = sys.argv[3].strip() # i.e. Number e.g. 34567, as in sender.txt.34567
+#merge_version = sys.argv[3].strip() # i.e. Number e.g. 34567, as in sender.txt.34567
 
 #===============================================================#
 #   READ & MERGE                                                #
 #===============================================================#
 
-sender_path = sys.argv[1] + "/sender.txt." + str(merge_version)
-recv_path = sys.argv[1] + "/receiver.txt." + str(merge_version)
+sender_path = read_path
+#sys.argv[1] + "/sender.txt." + str(merge_version)
+#recv_path = sys.argv[1] + "/receiver.txt." + str(merge_version)
+
+print(sender_path)
 
 print("==============================")
 print(" PROCESSING INFORMATION       ")
 print("==============================")
 with open(sender_path, "rb") as myFile:
     sender_final_stat = pickle.load(myFile)
-with open(recv_path, "rb") as myFile:
-    receiver_final_stat = pickle.load(myFile)
+#with open(recv_path, "rb") as myFile:
+#    receiver_final_stat = pickle.load(myFile)
 #===============================================================#
 #   WRITE                                                       #
 #===============================================================#
 
 #   SENDER   #
-outputfile = open(write_path + 'sender_summary.txt.' +  str(merge_version) , "w")
+outputfile = open(write_path + 'sender_summary.txt' , "w")
 scnt = -1
 
 for k,v in sender_final_stat.items():
@@ -71,7 +76,7 @@ for k,v in sender_final_stat.items():
                 for kkk,vvv in sorted(vv.items()):
                     s = s + "," +  str(vvv)
                 s = s + ";"
-
+        '''
         s = s + "|"
         if(k in receiver_final_stat and 'dates' in receiver_final_stat[k]):
             for kk,vv in receiver_final_stat[k]['dates'].items():
@@ -79,6 +84,7 @@ for k,v in sender_final_stat.items():
                 for kkk,vvv in sorted(vv.items()):
                     s = s + "," +  str(vvv)
                 s = s + ";"
+        '''
         outputfile.write(s + "\n")
     except Exception as e:
         print(e)
@@ -88,6 +94,7 @@ for k,v in sender_final_stat.items():
         continue
 outputfile.close()
 
+'''
 ##############
 
 #  RECEIVER  #
@@ -131,3 +138,4 @@ for k,v in receiver_final_stat.items():
 
 outputfile1.close()
 ##############
+'''
