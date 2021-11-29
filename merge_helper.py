@@ -6,7 +6,8 @@ import pickle
 
 sender_final_stat = {}
 receiver_final_stat = {}
-userfields = [ 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','AC','E','I','PH','AD','TO','O','S','P','T','A']
+#userfields = [ 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','AC','E','I','PH','AD','TO','O','S','P','T','A']
+userfields = ['LGBTQ', 'ADULT_CONTENT', 'HEALTH', 'DRUGS_ALCOHOL_GAMBLING', 'RACE', 'VIOLENCE_CRIME', 'POLITICS', 'RELATION', 'LOCATION','AC','E','I','PH','AD','P','T','A']
 
 if(len(sys.argv) != 5):
     print("=========================================================================================================")
@@ -21,7 +22,7 @@ write_path = sys.argv[2] # i.e. '/venmo/write/'
 rang = int(sys.argv[3])
 offset = int(sys.argv[4])
 SENDER_FILE = write_path + "/sender.txt."
-RECEIVER_FILE = write_path + "/receiver.txt."
+#RECEIVER_FILE = write_path + "/receiver.txt."
 
 def updateStat(username, joined, sender, receiver):
     try:
@@ -33,7 +34,7 @@ def updateStat(username, joined, sender, receiver):
                     sender_final_stat[username]['dates'][dt] = {col:0 for col in userfields}
                 for k in sender[dt]: #'S': sensitive, 'P': personal, 'T': total of senstive + personal, 'A': total notes
                     sender_final_stat[username]['dates'][dt][k] += sender[dt][k]
-
+        '''
         if receiver:
             if username not in receiver_final_stat:
                 receiver_final_stat[username] = {'joined': joined, 'dates': {}}
@@ -42,6 +43,7 @@ def updateStat(username, joined, sender, receiver):
                     receiver_final_stat[username]['dates'][dt] = {col:0 for col in userfields}
                 for k in receiver[dt]: #'S': sensitive, 'P': personal, 'T': total of senstive + personal, 'A': total notes
                     receiver_final_stat[username]['dates'][dt][k] += receiver[dt][k]
+        '''
     except Exception as e:
         print(e)
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -74,6 +76,7 @@ for f in files:
                 joined = sender_dict[username]['joined']
             dates = sender_dict[username]['dates']
             updateStat(username, joined, dates, {})
+    '''
     if f[:13] == 'receiver.txt.': # 'receiver.txt.xxxx'
         print(f)
         with open(join(read_path, f), "rb") as myFile:
@@ -84,6 +87,7 @@ for f in files:
                 joined = receiver_dict[username]['joined']
             dates = receiver_dict[username]['dates']
             updateStat(username, joined, {}, dates)
+    ''' 
 
 #===============================================================#
 #   DUMP                                                        #
@@ -93,7 +97,8 @@ for f in files:
 send = SENDER_FILE + str(start) + "-" + str(end)
 with open(send, "wb") as myFile:
     pickle.dump(sender_final_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
+'''
 recv = RECEIVER_FILE + str(start) + "-" + str(end)
 with open(recv, "wb") as myFile:
     pickle.dump(receiver_final_stat, myFile,protocol=pickle.HIGHEST_PROTOCOL)
-
+'''
